@@ -53,6 +53,12 @@ export async function commitPostsToGitHub(
 ): Promise<void> {
   const headers = getHeaders();
 
+  // Remove lone Unicode surrogates that break JSON parsing
+  const postsJson = JSON.stringify(posts, null, 2).replace(
+    /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g,
+    ""
+  );
+
   const updateRes = await fetch(
     `https://api.github.com/repos/${GITHUB_REPO}/contents/src/data/posts.json`,
     {
@@ -60,7 +66,7 @@ export async function commitPostsToGitHub(
       headers: { ...headers, "Content-Type": "application/json" },
       body: JSON.stringify({
         message: commitMessage,
-        content: Buffer.from(JSON.stringify(posts, null, 2)).toString("base64"),
+        content: Buffer.from(postsJson).toString("base64"),
         sha: fileSha,
       }),
     }
