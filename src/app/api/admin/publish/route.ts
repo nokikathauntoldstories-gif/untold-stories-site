@@ -35,32 +35,47 @@ async function updatePostsOnGitHub(newPost: Record<string, unknown>) {
   const token = process.env.GITHUB_TOKEN;
   if (!token) throw new Error("GitHub token not configured");
 
-  // 1. Get current posts.json from GitHub
+  const headers = { Authorization: `Bearer ${token}`, Accept: "application/vnd.github.v3+json" };
+
+  // 1. Get file metadata (sha) from Contents API
   const fileRes = await fetch(
     `https://api.github.com/repos/${GITHUB_REPO}/contents/src/data/posts.json`,
-    { headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github.v3+json" } }
+    { headers }
   );
   const fileData = await fileRes.json();
-  const currentContent = Buffer.from(fileData.content, "base64").toString("utf-8");
+  const fileSha = fileData.sha;
+
+  // 2. For large files, content is not inline — fetch via Git Blobs API
+  let currentContent: string;
+  if (fileData.content) {
+    currentContent = Buffer.from(fileData.content, "base64").toString("utf-8");
+  } else {
+    const blobRes = await fetch(
+      `https://api.github.com/repos/${GITHUB_REPO}/git/blobs/${fileSha}`,
+      { headers }
+    );
+    const blobData = await blobRes.json();
+    currentContent = Buffer.from(blobData.content, "base64").toString("utf-8");
+  }
+
   const posts = JSON.parse(currentContent);
 
-  // 2. Add new post at the beginning
+  // 3. Add new post at the beginning
   posts.unshift(newPost);
 
-  // 3. Commit updated file
+  // 4. Commit updated file
   const updateRes = await fetch(
     `https://api.github.com/repos/${GITHUB_REPO}/contents/src/data/posts.json`,
     {
       method: "PUT",
       headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github.v3+json",
+        ...headers,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         message: `New post: ${(newPost.message as string || "").substring(0, 50)}...`,
         content: Buffer.from(JSON.stringify(posts, null, 2)).toString("base64"),
-        sha: fileData.sha,
+        sha: fileSha,
       }),
     }
   );
