@@ -56,24 +56,13 @@ export default async function CategoryPage({
         <span className="text-gray-400">{category.emoji} {category.name}</span>
       </nav>
 
-      {/* Category Header */}
-      <div className="flex items-center gap-4 mb-10">
-        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-navy-800/60 to-navy-900/60 border border-navy-700/30 shrink-0">
-          <span className="text-2xl">{category.emoji}</span>
-        </div>
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gradient-gold tracking-tight leading-tight">
-            {category.name}
-            <span className="text-gray-500 text-base font-light tracking-wider ml-3">{category.nameEn}</span>
-          </h1>
-          <p className="text-gray-600 text-sm mt-1">{category.description}</p>
-        </div>
-        <div className="ml-auto shrink-0 hidden sm:flex items-center gap-2 bg-navy-800/30 border border-navy-700/20 rounded-full px-4 py-1.5">
-          <span className="w-1.5 h-1.5 bg-gold-400 rounded-full" />
-          <span className="text-gray-500 text-[11px] font-medium tracking-wider">කතා {posts.length}ක්</span>
-        </div>
+      {/* Category Title */}
+      <div className="flex items-baseline gap-3 mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-gradient-gold tracking-tight">
+          {category.emoji} {category.name}
+        </h1>
+        <span className="text-gray-600 text-sm">කතා {posts.length}ක්</span>
       </div>
-      <div className="h-px bg-gradient-to-r from-gold-400/20 via-navy-700/30 to-transparent mb-10" />
 
       <AdSlot type="leaderboard" className="mb-12" />
 
