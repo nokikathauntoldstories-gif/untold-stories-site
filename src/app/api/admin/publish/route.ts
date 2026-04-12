@@ -20,10 +20,10 @@ async function postToFacebook(message: string, imageUrl?: string) {
     body = { message, access_token: token };
   }
 
+  const params = new URLSearchParams(body);
   const res = await fetch(endpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: params,
   });
 
   const data = await res.json();
