@@ -100,7 +100,13 @@ export default function AdminPage() {
         }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(text || "Server returned empty response — check environment variables on Vercel");
+      }
       if (res.ok) {
         setResult({
           success: true,
