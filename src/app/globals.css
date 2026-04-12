@@ -1,26 +1,50 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-navy-950: #0a0e1a;
+  --color-navy-900: #0f1729;
+  --color-navy-800: #162038;
+  --color-navy-700: #1e2d4d;
+  --color-navy-600: #2a3d66;
+  --color-charcoal-900: #1a1a2e;
+  --color-charcoal-800: #242440;
+  --color-gold-500: #d4a843;
+  --color-gold-400: #e6c068;
+  --color-gold-300: #f0d48a;
+  --color-amber-400: #fbbf24;
+  --font-sinhala: "Noto Sans Sinhala", sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-navy-950);
+  color: #f3f4f6;
+  font-family: var(--font-sinhala);
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0e1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3d66;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a4d76;
+}
+
+/* Ad placeholders */
+.ad-slot {
+  background: rgba(42, 61, 102, 0.3);
+  border: 1px dashed rgba(212, 168, 67, 0.3);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(212, 168, 67, 0.5);
+  font-size: 0.75rem;
+  min-height: 90px;
 }

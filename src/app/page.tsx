@@ -1,65 +1,150 @@
-import Image from "next/image";
+import StoryCard from "@/components/StoryCard";
+import AdSlot from "@/components/AdSlot";
+import Link from "next/link";
+import { getAllPosts, getCategoryStats } from "@/lib/posts";
 
-export default function Home() {
+const POSTS_PER_PAGE = 24;
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; category?: string }>;
+}) {
+  const params = await searchParams;
+  const currentPage = parseInt(params.page || "1", 10);
+  const filterCategory = params.category || null;
+
+  let allPosts = getAllPosts();
+  if (filterCategory) {
+    allPosts = allPosts.filter((p) => p.category === filterCategory);
+  }
+
+  const totalPages = Math.ceil(allPosts.length / POSTS_PER_PAGE);
+  const posts = allPosts.slice(
+    (currentPage - 1) * POSTS_PER_PAGE,
+    currentPage * POSTS_PER_PAGE
+  );
+  const categoryStats = getCategoryStats();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      {/* Hero */}
+      <section className="text-center py-10 mb-8">
+        <h1 className="text-4xl sm:text-5xl font-bold text-gold-400 mb-3">
+          නොකී කතා
+        </h1>
+        <p className="text-xl text-gray-300 mb-1">Untold Stories</p>
+        <p className="text-gray-400 max-w-2xl mx-auto text-sm">
+          ලෝකයේ අභිරහස්, සැබෑ අපරාධ, ඉතිහාසය සහ භූ දේශපාලනය පිළිබඳ
+          ඔබ නොදන්නා කතා එකතුව
+        </p>
+      </section>
+
+      {/* Ad: Leaderboard */}
+      <AdSlot type="leaderboard" className="mb-8" />
+
+      {/* Category Filter */}
+      <div className="flex flex-wrap gap-2 mb-8 justify-center">
+        <Link
+          href="/"
+          className={`px-4 py-2 rounded-full text-sm border transition-colors ${
+            !filterCategory
+              ? "bg-gold-500 text-navy-950 border-gold-500 font-semibold"
+              : "border-navy-600 text-gray-300 hover:border-gold-500/50 hover:text-gold-400"
+          }`}
+        >
+          සියල්ල ({getAllPosts().length})
+        </Link>
+        {categoryStats.map(({ category, count }) => (
+          <Link
+            key={category.slug}
+            href={`/?category=${category.slug}`}
+            className={`px-4 py-2 rounded-full text-sm border transition-colors ${
+              filterCategory === category.slug
+                ? "bg-gold-500 text-navy-950 border-gold-500 font-semibold"
+                : "border-navy-600 text-gray-300 hover:border-gold-500/50 hover:text-gold-400"
+            }`}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {category.emoji} {category.name} ({count})
+          </Link>
+        ))}
+      </div>
+
+      <div className="flex gap-8">
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {posts.map((post) => (
+              <StoryCard key={post.id} post={post} />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-10">
+              {currentPage > 1 && (
+                <Link
+                  href={`/?page=${currentPage - 1}${filterCategory ? `&category=${filterCategory}` : ""}`}
+                  className="px-4 py-2 bg-navy-800 border border-navy-600 text-gray-300 rounded-lg hover:border-gold-500/50 text-sm"
+                >
+                  ← පෙර
+                </Link>
+              )}
+              <span className="text-gray-400 text-sm px-4">
+                පිටුව {currentPage} / {totalPages}
+              </span>
+              {currentPage < totalPages && (
+                <Link
+                  href={`/?page=${currentPage + 1}${filterCategory ? `&category=${filterCategory}` : ""}`}
+                  className="px-4 py-2 bg-navy-800 border border-navy-600 text-gray-300 rounded-lg hover:border-gold-500/50 text-sm"
+                >
+                  ඊළඟ →
+                </Link>
+              )}
+            </div>
+          )}
         </div>
-      </main>
+
+        {/* Sidebar - desktop only */}
+        <aside className="hidden xl:block w-72 shrink-0 space-y-6">
+          <AdSlot type="sidebar" />
+
+          <div className="bg-navy-900 border border-navy-700 rounded-xl p-5">
+            <h3 className="text-gold-400 font-semibold mb-3">ප්‍රවර්ග</h3>
+            <ul className="space-y-2">
+              {categoryStats.map(({ category, count }) => (
+                <li key={category.slug}>
+                  <Link
+                    href={`/category/${category.slug}`}
+                    className="flex justify-between text-sm text-gray-300 hover:text-gold-400 transition-colors"
+                  >
+                    <span>{category.emoji} {category.name}</span>
+                    <span className="text-gray-500">{count}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-navy-900 border border-navy-700 rounded-xl p-5">
+            <h3 className="text-gold-400 font-semibold mb-3">අපි ගැන</h3>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              ලෝකයේ විවිධ රටවල සිදුවූ අභිරහස්, සැබෑ අපරාධ සහ ඓතිහාසික
+              සිදුවීම් පිළිබඳ කතා ඔබ වෙත ගෙන එන &quot;නොකී කතා&quot; පිටුව.
+            </p>
+            <a
+              href="https://www.facebook.com/UntoldStoriesLK"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-3 text-sm text-gold-400 hover:text-gold-300"
+            >
+              📘 Facebook පිටුව →
+            </a>
+          </div>
+
+          <AdSlot type="sidebar" />
+        </aside>
+      </div>
     </div>
   );
 }
