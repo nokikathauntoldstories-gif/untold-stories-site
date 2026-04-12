@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Post, getPostTitle, getPostExcerpt, getPostImage, formatDate } from "@/lib/posts";
+import { Post, getPostTitle, getPostExcerpt, getPostImage, isVideoPost, formatDate } from "@/lib/posts";
 
 export default function StoryCard({ post }: { post: Post }) {
   const image = getPostImage(post);
@@ -22,6 +22,11 @@ export default function StoryCard({ post }: { post: Post }) {
             <span className="absolute top-3 left-3 bg-navy-900/80 backdrop-blur-sm text-xs px-2.5 py-1 rounded-full text-gold-400 border border-gold-500/20">
               {post.categoryInfo.emoji} {post.categoryInfo.name}
             </span>
+            {isVideoPost(post) && (
+              <span className="absolute top-3 right-3 bg-red-600/90 backdrop-blur-sm text-xs px-2.5 py-1 rounded-full text-white font-medium">
+                ▶ Video
+              </span>
+            )}
           </div>
         )}
         <div className="p-4 flex-1 flex flex-col">

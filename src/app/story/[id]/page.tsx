@@ -8,11 +8,13 @@ import {
   getPostTitle,
   getPostExcerpt,
   getPostImages,
+  getVideoUrl,
   formatDate,
 } from "@/lib/posts";
 import AdSlot from "@/components/AdSlot";
 import ShareButtons from "@/components/ShareButtons";
 import StoryCard from "@/components/StoryCard";
+import FacebookVideoEmbed from "@/components/FacebookVideoEmbed";
 
 export async function generateStaticParams() {
   return getAllPosts().map((post) => ({
@@ -66,6 +68,7 @@ export default async function StoryPage({
 
   const images = getPostImages(post);
   const title = getPostTitle(post);
+  const videoUrl = getVideoUrl(post);
   const relatedPosts = getPostsByCategory(post.category)
     .filter((p) => p.id !== post.id)
     .slice(0, 6);
@@ -136,8 +139,19 @@ export default async function StoryPage({
           </time>
         </div>
 
-        {/* Featured Image */}
-        {images[0] && (
+        {/* Video Embed for Reels */}
+        {videoUrl && (
+          <div className="mb-8 rounded-xl overflow-hidden border border-navy-700 bg-navy-900 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-red-500 text-lg">▶</span>
+              <span className="text-gold-400 font-semibold text-sm">වීඩියෝව</span>
+            </div>
+            <FacebookVideoEmbed videoUrl={videoUrl} />
+          </div>
+        )}
+
+        {/* Featured Image (only show if not a video post, or as fallback) */}
+        {!videoUrl && images[0] && (
           <div className="rounded-xl overflow-hidden mb-8 border border-navy-700">
             <img
               src={images[0]}

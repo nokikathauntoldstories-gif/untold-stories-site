@@ -107,6 +107,20 @@ export function formatDate(dateStr: string): string {
   });
 }
 
+export function getVideoUrl(post: Post): string | null {
+  if (!post.attachments?.data) return null;
+  for (const att of post.attachments.data) {
+    if (att.url && (att.url.includes('/reel/') || att.url.includes('/video/'))) {
+      return att.url;
+    }
+  }
+  return null;
+}
+
+export function isVideoPost(post: Post): boolean {
+  return getVideoUrl(post) !== null;
+}
+
 export function getCategoryStats(): Array<{ category: Category; count: number }> {
   const allPosts = getAllPosts();
   return Object.values(categories).map((cat) => ({
