@@ -114,6 +114,8 @@ export default function AdminPage() {
             data.message +
             (data.fbPosted
               ? " (Facebook post created)"
+              : data.fbError
+              ? ` (Facebook failed: ${data.fbError})`
               : " (Facebook post skipped)"),
         });
         setMessage("");

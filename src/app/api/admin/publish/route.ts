@@ -115,6 +115,7 @@ export async function POST(req: NextRequest) {
 
     const categoryInfo = CATEGORIES[category] || CATEGORIES.other;
     let fbPostId = null;
+    let fbError: string | null = null;
     let fbImageUrl = imageUrl || null;
 
     // 1. Post to Facebook if requested
@@ -123,8 +124,9 @@ export async function POST(req: NextRequest) {
         const fbResult = await postToFacebook(message, imageUrl || undefined);
         fbPostId = fbResult.id || fbResult.post_id;
       } catch (err) {
-        console.error("Facebook post failed:", err);
-        // Continue even if FB fails — still publish to website
+        fbError = err instanceof Error ? err.message : String(err);
+        console.error("Facebook post failed:", fbError);
+        // Continue — still publish to website
       }
     }
 
@@ -157,6 +159,7 @@ export async function POST(req: NextRequest) {
       success: true,
       postId,
       fbPosted: postToFb && fbPostId ? true : false,
+      fbError: fbError || undefined,
       message: "Post published! Site will update in ~1 minute.",
     });
   } catch (err) {
