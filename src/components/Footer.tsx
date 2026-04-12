@@ -46,12 +46,25 @@ export default function Footer() {
                 </a>
               </li>
               <li><Link href="/about" className="text-gray-400 hover:text-gold-300 transition-colors">📄 අපි ගැන</Link></li>
+              <li><Link href="/contact" className="text-gray-400 hover:text-gold-300 transition-colors">📧 සම්බන්ධ වන්න</Link></li>
+            </ul>
+
+            <h4 className="text-gold-400 font-semibold mt-6 mb-3">නීතිමය</h4>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="/privacy" className="text-gray-400 hover:text-gold-300 transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="text-gray-400 hover:text-gold-300 transition-colors">Terms of Service</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-navy-700 mt-8 pt-6 text-center text-gray-500 text-xs">
           <p>&copy; {new Date().getFullYear()} නොකී කතා - Untold Stories. සියලුම හිමිකම් ඇවිරිණි.</p>
+          <div className="flex justify-center gap-4 mt-2">
+            <Link href="/about" className="hover:text-gray-400 transition-colors">About</Link>
+            <Link href="/contact" className="hover:text-gray-400 transition-colors">Contact</Link>
+            <Link href="/privacy" className="hover:text-gray-400 transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-gray-400 transition-colors">Terms of Service</Link>
+          </div>
         </div>
       </div>
     </footer>
