@@ -56,9 +56,9 @@ export default function RootLayout({
         {/* AdSense: Replace ca-pub-XXXXXXX with your AdSense publisher ID */}
         {/* <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXX" crossOrigin="anonymous"></script> */}
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col ambient-glow">
         <Header />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 relative z-10">{children}</main>
         <Footer />
       </body>
     </html>

@@ -6,11 +6,11 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/", label: "මුල් පිටුව", exact: true },
-  { href: "/category/mysteries", label: "🔍 අභිරහස්", exact: false },
-  { href: "/category/true-crime", label: "🔪 සැබෑ අපරාධ", exact: false },
-  { href: "/category/historical", label: "📜 ඉතිහාසය", exact: false },
-  { href: "/category/geopolitics", label: "🌍 භූ දේශපාලනය", exact: false },
-  { href: "/category/psychology", label: "🧠 මනෝවිද්‍යාව", exact: false },
+  { href: "/category/mysteries", label: "අභිරහස්", exact: false },
+  { href: "/category/true-crime", label: "සැබෑ අපරාධ", exact: false },
+  { href: "/category/historical", label: "ඉතිහාසය", exact: false },
+  { href: "/category/geopolitics", label: "භූ දේශපාලනය", exact: false },
+  { href: "/category/psychology", label: "මනෝවිද්‍යාව", exact: false },
   { href: "/about", label: "අපි ගැන", exact: false },
 ];
 
@@ -20,10 +20,15 @@ export default function Header() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Close menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   if (pathname.startsWith("/admin")) return null;
 
@@ -34,23 +39,26 @@ export default function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`sticky top-0 z-50 transition-all duration-700 ${
         scrolled
-          ? "bg-navy-950/95 backdrop-blur-xl border-b border-navy-700/80 shadow-lg shadow-navy-950/50"
-          : "bg-navy-900/80 backdrop-blur-sm border-b border-navy-700/50"
+          ? "bg-navy-950/80 backdrop-blur-3xl border-b border-white/[0.04] shadow-[0_4px_30px_-10px_rgba(0,0,0,0.5)]"
+          : "bg-transparent border-b border-transparent"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-[68px]">
+          {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 bg-gradient-to-br from-gold-500 to-gold-400 rounded-lg flex items-center justify-center shadow-lg shadow-gold-500/20 group-hover:shadow-gold-500/40 transition-shadow">
-              <span className="text-navy-950 font-bold text-sm">NK</span>
+            <div className="relative">
+              <div className="w-9 h-9 bg-gradient-to-br from-gold-200 via-gold-400 to-gold-500 rounded-xl flex items-center justify-center shadow-lg shadow-gold-500/15 group-hover:shadow-gold-500/30 transition-all duration-500 group-hover:scale-105">
+                <span className="text-navy-950 font-bold text-[13px] tracking-tight">NK</span>
+              </div>
             </div>
             <div>
-              <h1 className="text-gold-400 font-bold text-lg leading-tight group-hover:text-gold-300 transition-colors">
+              <h1 className="text-gold-300 font-bold text-[17px] leading-none group-hover:text-gold-200 transition-colors duration-300 tracking-tight">
                 නොකී කතා
               </h1>
-              <p className="text-gray-500 text-[10px] leading-tight tracking-wider uppercase">
+              <p className="text-gray-600 text-[9px] leading-tight tracking-[0.25em] uppercase font-medium mt-0.5">
                 Untold Stories
               </p>
             </div>
@@ -62,15 +70,15 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+                className={`relative px-3.5 py-2 text-[13px] rounded-lg transition-all duration-300 ${
                   isActive(item)
-                    ? "text-gold-400 bg-gold-500/10 font-medium"
-                    : "text-gray-400 hover:text-gray-200 hover:bg-navy-800/50"
+                    ? "text-gold-300 font-semibold"
+                    : "text-gray-500 hover:text-gray-300 hover:bg-white/[0.02]"
                 }`}
               >
                 {item.label}
                 {isActive(item) && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-gold-500 rounded-full" />
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-[2px] bg-gradient-to-r from-gold-400/50 via-gold-400 to-gold-400/50 rounded-full" />
                 )}
               </Link>
             ))}
@@ -79,38 +87,42 @@ export default function Header() {
           {/* Mobile menu button */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="lg:hidden p-2 text-gray-300 hover:text-gold-400 rounded-lg hover:bg-navy-800/50 transition-colors"
+            className="lg:hidden p-2 text-gray-500 hover:text-gold-400 rounded-lg hover:bg-white/[0.03] transition-all duration-300"
             aria-label="Toggle menu"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               {menuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
               )}
             </svg>
           </button>
         </div>
 
         {/* Mobile menu */}
-        {menuOpen && (
-          <nav className="lg:hidden pb-4 border-t border-navy-700/50 pt-3 space-y-0.5">
+        <div
+          className={`lg:hidden overflow-hidden transition-all duration-500 ease-out ${
+            menuOpen ? "max-h-[400px] opacity-100 pb-5" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="gradient-line mb-3" />
+          <nav className="space-y-0.5">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setMenuOpen(false)}
-                className={`block px-4 py-2.5 text-sm rounded-lg transition-colors ${
+                className={`block px-4 py-3 text-sm rounded-xl transition-all duration-300 ${
                   isActive(item)
-                    ? "text-gold-400 bg-gold-500/10 font-medium"
-                    : "text-gray-300 hover:text-gold-400 hover:bg-navy-800/50"
+                    ? "text-gold-300 bg-gold-500/[0.06] font-medium"
+                    : "text-gray-400 hover:text-gold-400 hover:bg-white/[0.02]"
                 }`}
               >
                 {item.label}
               </Link>
             ))}
           </nav>
-        )}
+        </div>
       </div>
     </header>
   );

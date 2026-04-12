@@ -115,43 +115,40 @@ export default async function StoryPage({
       <ReadingProgress />
       <BackToTop />
 
-      <article className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <article className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
         {/* Ad: Leaderboard */}
-        <AdSlot type="leaderboard" className="mb-6" />
+        <AdSlot type="leaderboard" className="mb-10" />
 
         {/* Breadcrumb */}
-        <nav className="text-sm text-gray-500 mb-6 flex items-center gap-2">
-          <Link href="/" className="hover:text-gold-400 transition-colors">මුල් පිටුව</Link>
-          <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <nav className="breadcrumb mb-8">
+          <Link href="/">මුල් පිටුව</Link>
+          <svg className="separator" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
           </svg>
-          <Link
-            href={`/category/${post.category}`}
-            className="hover:text-gold-400 transition-colors"
-          >
+          <Link href={`/category/${post.category}`}>
             {post.categoryInfo.emoji} {post.categoryInfo.name}
           </Link>
         </nav>
 
         {/* Title */}
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gradient-gold leading-snug mb-5">
+        <h1 className="text-2xl sm:text-3xl md:text-[2.5rem] font-bold text-gradient-gold leading-[1.3] mb-7 tracking-tight">
           {title}
         </h1>
 
         {/* Meta bar */}
-        <div className="flex flex-wrap items-center gap-3 mb-8 pb-6 border-b border-navy-700/50">
-          <span className="bg-navy-800 text-gold-400 text-xs px-3 py-1.5 rounded-lg border border-navy-600/50 font-medium">
+        <div className="flex flex-wrap items-center gap-4 mb-10 pb-8">
+          <span className="badge-premium text-[11px] px-3.5 py-1.5 rounded-lg font-medium">
             {post.categoryInfo.emoji} {post.categoryInfo.name}
           </span>
-          <span className="text-gray-500 text-sm flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          <span className="text-gray-600 text-[13px] flex items-center gap-2">
+            <svg className="w-3.5 h-3.5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
             </svg>
             {formatDate(post.created_time)}
           </span>
-          <span className="text-gray-500 text-sm flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          <span className="text-gray-600 text-[13px] flex items-center gap-2">
+            <svg className="w-3.5 h-3.5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             {readTime} min read
           </span>
@@ -160,12 +157,14 @@ export default async function StoryPage({
           </div>
         </div>
 
+        <div className="divider-gold mb-10" />
+
         {/* Video Embed for Reels */}
         {videoUrl && (
-          <div className="mb-8 rounded-xl overflow-hidden border border-navy-700 bg-navy-900 p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-red-500 text-lg">▶</span>
-              <span className="text-gold-400 font-semibold text-sm">වීඩියෝව</span>
+          <div className="mb-10 rounded-2xl overflow-hidden border border-navy-700/40 bg-navy-900/40 p-6">
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className="text-red-500 text-lg">&#9654;</span>
+              <span className="text-gold-400 font-semibold text-[13px]">වීඩියෝව</span>
             </div>
             <FacebookVideoEmbed videoUrl={videoUrl} />
           </div>
@@ -173,28 +172,22 @@ export default async function StoryPage({
 
         {/* Featured Image */}
         {!videoUrl && images[0] && (
-          <div className="rounded-xl overflow-hidden mb-8 border border-navy-700/50 shadow-2xl shadow-navy-950/50">
+          <div className="image-frame mb-10">
             <img
               src={images[0]}
               alt={title}
-              className="w-full max-h-[500px] object-cover"
+              className="w-full max-h-[520px] object-cover"
             />
           </div>
         )}
 
         {/* Content */}
-        <div className="mt-8 space-y-5">
+        <div className="article-content mt-10 space-y-7">
           {paragraphs.map((para, i) => (
             <div key={i}>
-              {i === 0 ? (
-                <p className="text-gray-200 leading-loose text-base first-letter:text-3xl first-letter:font-bold first-letter:text-gold-400 first-letter:mr-1 first-letter:float-left whitespace-pre-line">
-                  {para.trim()}
-                </p>
-              ) : (
-                <p className="text-gray-200/90 leading-loose text-[15px] whitespace-pre-line">
-                  {para.trim()}
-                </p>
-              )}
+              <p className="text-gray-300/80 leading-[2.1] text-[15.5px] whitespace-pre-line">
+                {para.trim()}
+              </p>
               {i === midPoint && <AdSlot type="in-article" />}
             </div>
           ))}
@@ -202,13 +195,13 @@ export default async function StoryPage({
 
         {/* Additional images */}
         {images.length > 1 && (
-          <div className="mt-8 grid grid-cols-2 gap-4">
+          <div className="mt-10 grid grid-cols-2 gap-4">
             {images.slice(1).map((img, idx) => (
-              <div key={idx} className="rounded-xl overflow-hidden border border-navy-700/50 shadow-lg">
+              <div key={idx} className="image-frame img-zoom">
                 <img
                   src={img}
                   alt={`${title} - ${idx + 2}`}
-                  className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500"
+                  className="w-full h-52 object-cover"
                   loading="lazy"
                 />
               </div>
@@ -217,25 +210,29 @@ export default async function StoryPage({
         )}
 
         {/* Share again at bottom */}
-        <div className="mt-10 pt-6 border-t border-navy-700/50 flex items-center justify-between">
-          <span className="text-gray-500 text-sm">Share this story</span>
-          <ShareButtons title={title} />
+        <div className="mt-14 pt-7">
+          <div className="divider-gold mb-7" />
+          <div className="flex items-center justify-between">
+            <span className="text-gray-700 text-[13px] font-medium">මෙම කතාව බෙදාගන්න</span>
+            <ShareButtons title={title} />
+          </div>
         </div>
 
         {/* AdSense: In-article bottom */}
-        <AdSlot type="in-article" className="mt-8" />
+        <AdSlot type="in-article" className="mt-10" />
 
         {/* Related Stories */}
         {relatedPosts.length > 0 && (
-          <section className="mt-14">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="w-1 h-6 bg-gold-500 rounded-full" />
-              <h2 className="text-xl font-bold text-gold-400">
-                ආශ්‍රිත කතා
-              </h2>
-              <div className="h-px flex-1 bg-navy-700/50" />
+          <section className="mt-20">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="section-accent">
+                <h2 className="text-lg font-bold text-gold-400 tracking-tight">
+                  ආශ්‍රිත කතා
+                </h2>
+              </div>
+              <div className="h-px flex-1 bg-gradient-to-r from-navy-700/40 to-transparent" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {relatedPosts.map((rp) => (
                 <StoryCard key={rp.id} post={rp} />
               ))}
