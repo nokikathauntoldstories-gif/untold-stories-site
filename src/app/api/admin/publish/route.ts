@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { message, category, imageUrl, postToFb } = await req.json();
+    const { message, category, imageUrl, videoUrl, postToFb } = await req.json();
 
     if (!message || !category) {
       return NextResponse.json({ error: "Message and category are required" }, { status: 400 });
@@ -115,13 +115,21 @@ export async function POST(req: NextRequest) {
 
     // 2. Create post object
     const postId = fbPostId || `${FB_PAGE_ID}_${Date.now()}`;
+    const attachmentData: Record<string, unknown>[] = [];
+    if (fbImageUrl) {
+      attachmentData.push({ media: { image: { src: fbImageUrl } } });
+    }
+    if (videoUrl) {
+      attachmentData.push({ url: videoUrl });
+    }
+
     const newPost = {
       id: postId,
       message,
       created_time: new Date().toISOString(),
       full_picture: fbImageUrl,
-      attachments: fbImageUrl
-        ? { data: [{ media: { image: { src: fbImageUrl } } }] }
+      attachments: attachmentData.length > 0
+        ? { data: attachmentData }
         : undefined,
       category,
       categoryInfo,
