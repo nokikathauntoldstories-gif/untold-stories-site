@@ -56,21 +56,24 @@ export default async function CategoryPage({
         <span className="text-gray-400">{category.emoji} {category.name}</span>
       </nav>
 
-      {/* Category Header Banner */}
-      <div className="category-banner rounded-2xl bg-navy-900/40 border border-navy-700/30 p-10 sm:p-14 text-center mb-14">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-navy-800/60 to-navy-900/60 border border-navy-700/30 mb-6">
-          <span className="text-3xl">{category.emoji}</span>
+      {/* Category Header */}
+      <div className="flex items-center gap-4 mb-10">
+        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-navy-800/60 to-navy-900/60 border border-navy-700/30 shrink-0">
+          <span className="text-2xl">{category.emoji}</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gradient-gold mb-3 tracking-tight">
-          {category.name}
-        </h1>
-        <p className="text-gray-500 text-base mb-1.5 font-light tracking-wider">{category.nameEn}</p>
-        <p className="text-gray-600 text-sm max-w-md mx-auto leading-relaxed">{category.description}</p>
-        <div className="mt-5 inline-flex items-center gap-2 bg-navy-800/30 border border-navy-700/20 rounded-full px-4 py-1.5">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gradient-gold tracking-tight leading-tight">
+            {category.name}
+            <span className="text-gray-500 text-base font-light tracking-wider ml-3">{category.nameEn}</span>
+          </h1>
+          <p className="text-gray-600 text-sm mt-1">{category.description}</p>
+        </div>
+        <div className="ml-auto shrink-0 hidden sm:flex items-center gap-2 bg-navy-800/30 border border-navy-700/20 rounded-full px-4 py-1.5">
           <span className="w-1.5 h-1.5 bg-gold-400 rounded-full" />
-          <span className="text-gray-500 text-[11px] font-medium tracking-wider uppercase">කතා {posts.length}ක්</span>
+          <span className="text-gray-500 text-[11px] font-medium tracking-wider">කතා {posts.length}ක්</span>
         </div>
       </div>
+      <div className="h-px bg-gradient-to-r from-gold-400/20 via-navy-700/30 to-transparent mb-10" />
 
       <AdSlot type="leaderboard" className="mb-12" />
 
