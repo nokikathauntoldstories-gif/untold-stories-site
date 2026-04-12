@@ -69,26 +69,33 @@ export function getPostExcerpt(post: Post, length = 200): string {
 }
 
 export function getPostImage(post: Post): string | null {
-  const postId = post.id.replace(/\//g, '_');
-  return `/images/${postId}.jpg`;
+  if (post.full_picture) return post.full_picture;
+  if (post.attachments?.data?.[0]?.media?.image?.src) {
+    return post.attachments.data[0].media.image.src;
+  }
+  return null;
 }
 
 export function getPostImages(post: Post): string[] {
-  const postId = post.id.replace(/\//g, '_');
   const images: string[] = [];
   if (post.full_picture) {
-    images.push(`/images/${postId}.jpg`);
+    images.push(post.full_picture);
   }
   if (post.attachments?.data) {
     for (const att of post.attachments.data) {
+      if (att.media?.image?.src && !images.includes(att.media.image.src)) {
+        images.push(att.media.image.src);
+      }
       if (att.subattachments?.data) {
-        att.subattachments.data.forEach((_, idx) => {
-          images.push(`/images/${postId}_sub${idx}.jpg`);
-        });
+        for (const sub of att.subattachments.data) {
+          if (sub.media?.image?.src && !images.includes(sub.media.image.src)) {
+            images.push(sub.media.image.src);
+          }
+        }
       }
     }
   }
-  return images.length > 0 ? images : [`/images/${postId}.jpg`];
+  return images;
 }
 
 export function formatDate(dateStr: string): string {
