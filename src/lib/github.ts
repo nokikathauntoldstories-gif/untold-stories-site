@@ -16,6 +16,10 @@ export async function fetchPostsFromGitHub(): Promise<{ posts: Record<string, un
   const fileData = await fileRes.json();
   const fileSha = fileData.sha;
 
+  if (!fileSha) {
+    throw new Error("Failed to get file SHA from GitHub. Response: " + JSON.stringify(fileData).substring(0, 200));
+  }
+
   let currentContent: string;
   if (fileData.content) {
     currentContent = Buffer.from(fileData.content, "base64").toString("utf-8");
@@ -24,11 +28,22 @@ export async function fetchPostsFromGitHub(): Promise<{ posts: Record<string, un
       `https://api.github.com/repos/${GITHUB_REPO}/git/blobs/${fileSha}`,
       { headers }
     );
+    if (!blobRes.ok) {
+      throw new Error(`Failed to fetch blob: ${blobRes.status} ${blobRes.statusText}`);
+    }
     const blobData = await blobRes.json();
+    if (!blobData.content) {
+      throw new Error("Blob response missing content field");
+    }
     currentContent = Buffer.from(blobData.content, "base64").toString("utf-8");
   }
 
-  return { posts: JSON.parse(currentContent), fileSha };
+  const posts = JSON.parse(currentContent);
+  if (!Array.isArray(posts) || posts.length === 0) {
+    throw new Error(`Posts data appears invalid: got ${Array.isArray(posts) ? posts.length : typeof posts} entries. Aborting to prevent data loss.`);
+  }
+
+  return { posts, fileSha };
 }
 
 export async function commitPostsToGitHub(
