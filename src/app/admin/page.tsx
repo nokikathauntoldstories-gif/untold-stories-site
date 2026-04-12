@@ -61,6 +61,8 @@ export default function AdminPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [manageResult, setManageResult] = useState<ResultMsg | null>(null);
+  const [editUploading, setEditUploading] = useState(false);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogin = async () => {
     setAuthError("");
@@ -662,15 +664,64 @@ export default function AdminPage() {
 
                       <div className="mb-4">
                         <label className="block text-gray-400 text-xs font-medium mb-1">
-                          Image URL <span className="text-gray-500">(image changes apply to website only, not Facebook)</span>
+                          Image <span className="text-gray-500">(image changes apply to website only, not Facebook)</span>
                         </label>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => editFileInputRef.current?.click()}
+                            disabled={editUploading}
+                            className="flex items-center gap-2 bg-navy-800 border border-navy-600 hover:border-gold-500/50 rounded-lg px-4 py-2 text-gray-300 text-xs transition-colors"
+                          >
+                            {editUploading ? "Uploading..." : "Upload Image"}
+                          </button>
+                          <input
+                            type="url"
+                            value={editImageUrl}
+                            onChange={(e) => setEditImageUrl(e.target.value)}
+                            placeholder="or paste image URL"
+                            className="flex-1 bg-navy-800 border border-navy-600 rounded-lg px-3 py-2 text-gray-200 text-sm focus:outline-none focus:border-gold-500/50"
+                          />
+                        </div>
                         <input
-                          type="url"
-                          value={editImageUrl}
-                          onChange={(e) => setEditImageUrl(e.target.value)}
-                          placeholder="Image URL"
-                          className="w-full bg-navy-800 border border-navy-600 rounded-lg px-3 py-2 text-gray-200 text-sm focus:outline-none focus:border-gold-500/50"
+                          ref={editFileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setEditUploading(true);
+                            try {
+                              const formData = new FormData();
+                              formData.append("file", file);
+                              const res = await fetch("/api/admin/upload", {
+                                method: "POST",
+                                headers: { "x-admin-password": password },
+                                body: formData,
+                              });
+                              const data = await res.json();
+                              if (!res.ok) throw new Error(data.error);
+                              setEditImageUrl(data.url);
+                            } catch (err) {
+                              alert("Upload failed: " + (err instanceof Error ? err.message : "Unknown error"));
+                            } finally {
+                              setEditUploading(false);
+                            }
+                          }}
                         />
+                        {editImageUrl && (
+                          <div className="mt-2 relative inline-block">
+                            <div className="rounded-lg overflow-hidden border border-navy-600 max-w-[120px]">
+                              <img src={editImageUrl} alt="Preview" className="w-full h-20 object-cover" />
+                            </div>
+                            <button
+                              onClick={() => setEditImageUrl("")}
+                              className="absolute -top-1 -right-1 bg-red-600 hover:bg-red-500 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center"
+                            >
+                              x
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex gap-2">
