@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import { upload } from "@vercel/blob/client";
 
 const CATEGORIES = [
   { value: "mysteries", label: "🔍 අභිරහස් — Mysteries" },
@@ -49,23 +50,14 @@ export default function AdminPage() {
   const handleImageUpload = async (file: File) => {
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        headers: { "x-admin-password": password },
-        body: formData,
+      const blob = await upload(`images/${Date.now()}-${file.name}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/admin/upload-token",
+        clientPayload: password,
       });
-
-      const data = await res.json();
-      if (res.ok && data.url) {
-        setImageUrl(data.url);
-      } else {
-        alert("Upload failed: " + (data.error || "Unknown error"));
-      }
-    } catch {
-      alert("Upload failed. Try again.");
+      setImageUrl(blob.url);
+    } catch (err) {
+      alert("Upload failed: " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setUploading(false);
     }
@@ -74,23 +66,14 @@ export default function AdminPage() {
   const handleVideoUpload = async (file: File) => {
     setUploadingVideo(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        headers: { "x-admin-password": password },
-        body: formData,
+      const blob = await upload(`videos/${Date.now()}-${file.name}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/admin/upload-token",
+        clientPayload: password,
       });
-
-      const data = await res.json();
-      if (res.ok && data.url) {
-        setVideoUrl(data.url);
-      } else {
-        alert("Video upload failed: " + (data.error || "Unknown error"));
-      }
-    } catch {
-      alert("Video upload failed. Try again.");
+      setVideoUrl(blob.url);
+    } catch (err) {
+      alert("Video upload failed: " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setUploadingVideo(false);
     }
