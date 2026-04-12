@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/", label: "මුල් පිටුව" },
@@ -15,6 +16,9 @@ const navItems = [
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  if (pathname.startsWith("/admin")) return null;
 
   return (
     <header className="bg-navy-900/95 backdrop-blur-sm border-b border-navy-700 sticky top-0 z-50">
