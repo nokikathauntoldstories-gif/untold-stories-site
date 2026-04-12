@@ -35,7 +35,7 @@ export interface Category {
   description: string;
 }
 
-const posts: Post[] = postsData as Post[];
+const posts: Post[] = postsData as unknown as Post[];
 const categories: Record<string, Category> = categoriesData as Record<string, Category>;
 
 export function getAllPosts(): Post[] {
