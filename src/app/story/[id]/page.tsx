@@ -15,6 +15,13 @@ import AdSlot from "@/components/AdSlot";
 import ShareButtons from "@/components/ShareButtons";
 import StoryCard from "@/components/StoryCard";
 import FacebookVideoEmbed from "@/components/FacebookVideoEmbed";
+import ReadingProgress from "@/components/ReadingProgress";
+import BackToTop from "@/components/BackToTop";
+
+function getReadingTime(message?: string): number {
+  if (!message) return 1;
+  return Math.max(1, Math.ceil(message.split(/\s+/).length / 200));
+}
 
 export async function generateStaticParams() {
   return getAllPosts().map((post) => ({
@@ -69,19 +76,17 @@ export default async function StoryPage({
   const images = getPostImages(post);
   const title = getPostTitle(post);
   const videoUrl = getVideoUrl(post);
+  const readTime = getReadingTime(post.message);
   const relatedPosts = getPostsByCategory(post.category)
     .filter((p) => p.id !== post.id)
     .slice(0, 6);
 
-  // Split message into paragraphs
   const paragraphs = (post.message || "")
     .split(/\n\n+/)
     .filter((p) => p.trim().length > 0);
 
-  // Insert ad after every 3 paragraphs
   const midPoint = Math.floor(paragraphs.length / 2);
 
-  // Schema.org structured data
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -107,36 +112,52 @@ export default async function StoryPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <ReadingProgress />
+      <BackToTop />
 
       <article className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {/* Ad: Leaderboard */}
         <AdSlot type="leaderboard" className="mb-6" />
 
         {/* Breadcrumb */}
-        <nav className="text-sm text-gray-400 mb-6">
-          <Link href="/" className="hover:text-gold-400">මුල් පිටුව</Link>
-          <span className="mx-2">/</span>
+        <nav className="text-sm text-gray-500 mb-6 flex items-center gap-2">
+          <Link href="/" className="hover:text-gold-400 transition-colors">මුල් පිටුව</Link>
+          <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+          </svg>
           <Link
             href={`/category/${post.category}`}
-            className="hover:text-gold-400"
+            className="hover:text-gold-400 transition-colors"
           >
             {post.categoryInfo.emoji} {post.categoryInfo.name}
           </Link>
         </nav>
 
         {/* Title */}
-        <h1 className="text-2xl sm:text-3xl font-bold text-gold-400 leading-relaxed mb-4">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gradient-gold leading-snug mb-5">
           {title}
         </h1>
 
-        {/* Meta */}
-        <div className="flex flex-wrap items-center gap-4 mb-6">
-          <span className="bg-navy-800 text-gold-400 text-xs px-3 py-1 rounded-full border border-gold-500/20">
+        {/* Meta bar */}
+        <div className="flex flex-wrap items-center gap-3 mb-8 pb-6 border-b border-navy-700/50">
+          <span className="bg-navy-800 text-gold-400 text-xs px-3 py-1.5 rounded-lg border border-navy-600/50 font-medium">
             {post.categoryInfo.emoji} {post.categoryInfo.name}
           </span>
-          <time className="text-gray-400 text-sm">
+          <span className="text-gray-500 text-sm flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
             {formatDate(post.created_time)}
-          </time>
+          </span>
+          <span className="text-gray-500 text-sm flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            {readTime} min read
+          </span>
+          <div className="ml-auto">
+            <ShareButtons title={title} />
+          </div>
         </div>
 
         {/* Video Embed for Reels */}
@@ -150,9 +171,9 @@ export default async function StoryPage({
           </div>
         )}
 
-        {/* Featured Image (only show if not a video post, or as fallback) */}
+        {/* Featured Image */}
         {!videoUrl && images[0] && (
-          <div className="rounded-xl overflow-hidden mb-8 border border-navy-700">
+          <div className="rounded-xl overflow-hidden mb-8 border border-navy-700/50 shadow-2xl shadow-navy-950/50">
             <img
               src={images[0]}
               alt={title}
@@ -161,16 +182,19 @@ export default async function StoryPage({
           </div>
         )}
 
-        {/* Share */}
-        <ShareButtons title={title} />
-
         {/* Content */}
-        <div className="mt-8 space-y-4">
+        <div className="mt-8 space-y-5">
           {paragraphs.map((para, i) => (
             <div key={i}>
-              <p className="text-gray-200 leading-loose text-[15px] whitespace-pre-line">
-                {para.trim()}
-              </p>
+              {i === 0 ? (
+                <p className="text-gray-200 leading-loose text-base first-letter:text-3xl first-letter:font-bold first-letter:text-gold-400 first-letter:mr-1 first-letter:float-left whitespace-pre-line">
+                  {para.trim()}
+                </p>
+              ) : (
+                <p className="text-gray-200/90 leading-loose text-[15px] whitespace-pre-line">
+                  {para.trim()}
+                </p>
+              )}
               {i === midPoint && <AdSlot type="in-article" />}
             </div>
           ))}
@@ -180,11 +204,11 @@ export default async function StoryPage({
         {images.length > 1 && (
           <div className="mt-8 grid grid-cols-2 gap-4">
             {images.slice(1).map((img, idx) => (
-              <div key={idx} className="rounded-lg overflow-hidden border border-navy-700">
+              <div key={idx} className="rounded-xl overflow-hidden border border-navy-700/50 shadow-lg">
                 <img
                   src={img}
                   alt={`${title} - ${idx + 2}`}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500"
                   loading="lazy"
                 />
               </div>
@@ -193,7 +217,8 @@ export default async function StoryPage({
         )}
 
         {/* Share again at bottom */}
-        <div className="mt-8 pt-6 border-t border-navy-700">
+        <div className="mt-10 pt-6 border-t border-navy-700/50 flex items-center justify-between">
+          <span className="text-gray-500 text-sm">Share this story</span>
           <ShareButtons title={title} />
         </div>
 
@@ -202,10 +227,14 @@ export default async function StoryPage({
 
         {/* Related Stories */}
         {relatedPosts.length > 0 && (
-          <section className="mt-12">
-            <h2 className="text-xl font-bold text-gold-400 mb-6">
-              ආශ්‍රිත කතා
-            </h2>
+          <section className="mt-14">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="w-1 h-6 bg-gold-500 rounded-full" />
+              <h2 className="text-xl font-bold text-gold-400">
+                ආශ්‍රිත කතා
+              </h2>
+              <div className="h-px flex-1 bg-navy-700/50" />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedPosts.map((rp) => (
                 <StoryCard key={rp.id} post={rp} />
