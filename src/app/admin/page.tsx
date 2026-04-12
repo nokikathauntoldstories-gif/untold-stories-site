@@ -176,9 +176,11 @@ export default function AdminPage() {
         setTotalPages(data.totalPages);
         setTotalPosts(data.total);
         setPostsPage(data.page);
+      } else {
+        setManageResult({ error: data.error || `Failed to load posts (${res.status})` });
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      setManageResult({ error: "Failed to load posts: " + (err instanceof Error ? err.message : "Unknown error") });
     } finally {
       setLoadingPosts(false);
     }
