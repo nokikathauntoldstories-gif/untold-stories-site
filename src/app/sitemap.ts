@@ -4,7 +4,7 @@ import { getAllPosts, getAllCategories } from "@/lib/posts";
 export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://untold-stories-site.vercel.app";
+  const baseUrl = "https://nokikatha.com";
   const posts = getAllPosts();
   const categories = getAllCategories();
 

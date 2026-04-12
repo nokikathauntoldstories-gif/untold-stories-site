@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://untold-stories-site.vercel.app/sitemap.xml
+Sitemap: https://nokikatha.com/sitemap.xml
