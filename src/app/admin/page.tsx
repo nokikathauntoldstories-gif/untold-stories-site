@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { upload } from "@vercel/blob/client";
 
 const CATEGORIES = [
   { value: "mysteries", label: "🔍 අභිරහස් — Mysteries" },
@@ -47,35 +46,30 @@ export default function AdminPage() {
     }
   };
 
-  const handleImageUpload = async (file: File) => {
-    setUploading(true);
-    try {
-      const blob = await upload(`images/${Date.now()}-${file.name}`, file, {
-        access: "public",
-        handleUploadUrl: "/api/admin/upload-token",
-        clientPayload: password,
-      });
-      setImageUrl(blob.url);
-    } catch (err) {
-      alert("Upload failed: " + (err instanceof Error ? err.message : "Unknown error"));
-    } finally {
-      setUploading(false);
-    }
-  };
+  const handleFileUpload = async (file: File, type: "image" | "video") => {
+    if (type === "image") setUploading(true);
+    else setUploadingVideo(true);
 
-  const handleVideoUpload = async (file: File) => {
-    setUploadingVideo(true);
     try {
-      const blob = await upload(`videos/${Date.now()}-${file.name}`, file, {
-        access: "public",
-        handleUploadUrl: "/api/admin/upload-token",
-        clientPayload: password,
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: { "x-admin-password": password },
+        body: formData,
       });
-      setVideoUrl(blob.url);
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+
+      if (type === "image") setImageUrl(data.url);
+      else setVideoUrl(data.url);
     } catch (err) {
-      alert("Video upload failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert(`${type} upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
-      setUploadingVideo(false);
+      if (type === "image") setUploading(false);
+      else setUploadingVideo(false);
     }
   };
 
@@ -265,7 +259,7 @@ export default function AdminPage() {
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) handleImageUpload(file);
+              if (file) handleFileUpload(file, "image");
             }}
           />
 
@@ -329,7 +323,7 @@ export default function AdminPage() {
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) handleVideoUpload(file);
+              if (file) handleFileUpload(file, "video");
             }}
           />
 
