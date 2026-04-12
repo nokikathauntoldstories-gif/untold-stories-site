@@ -17,8 +17,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    // Determine folder based on file type
+    const isVideo = file.type.startsWith("video/");
+    const folder = isVideo ? "videos" : "images";
+
     // Upload to Vercel Blob
-    const blob = await put(`images/${Date.now()}-${file.name}`, file, {
+    const blob = await put(`${folder}/${Date.now()}-${file.name}`, file, {
       access: "public",
     });
 

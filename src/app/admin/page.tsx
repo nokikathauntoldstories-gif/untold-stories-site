@@ -23,12 +23,14 @@ export default function AdminPage() {
   const [postToFb, setPostToFb] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [result, setResult] = useState<{
     success?: boolean;
     error?: string;
     message?: string;
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogin = async () => {
     setAuthError("");
@@ -66,6 +68,31 @@ export default function AdminPage() {
       alert("Upload failed. Try again.");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleVideoUpload = async (file: File) => {
+    setUploadingVideo(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: { "x-admin-password": password },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setVideoUrl(data.url);
+      } else {
+        alert("Video upload failed: " + (data.error || "Unknown error"));
+      }
+    } catch {
+      alert("Video upload failed. Try again.");
+    } finally {
+      setUploadingVideo(false);
     }
   };
 
@@ -272,21 +299,51 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* Video URL */}
+        {/* Video */}
         <div className="mb-6">
           <label className="block text-gray-300 text-sm font-medium mb-2">
-            🎬 Video Link (optional)
+            🎬 Video (optional)
           </label>
+
+          <div className="flex gap-3">
+            {/* Upload button */}
+            <button
+              onClick={() => videoInputRef.current?.click()}
+              disabled={uploadingVideo}
+              className="flex items-center gap-2 bg-navy-800 border border-navy-600 hover:border-gold-500/50 rounded-lg px-5 py-3 text-gray-300 text-sm transition-colors"
+            >
+              {uploadingVideo ? (
+                <>
+                  <span className="animate-spin">⏳</span> Uploading...
+                </>
+              ) : (
+                <>📁 Upload Video</>
+              )}
+            </button>
+
+            {/* OR paste URL */}
+            <input
+              type="url"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="or paste video/reel URL here"
+              className="flex-1 bg-navy-800 border border-navy-600 rounded-lg px-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gold-500/50 text-sm"
+            />
+          </div>
+
           <input
-            type="url"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="https://www.facebook.com/reel/123456789 or YouTube URL"
-            className="w-full bg-navy-800 border border-navy-600 rounded-lg px-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gold-500/50 text-sm"
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleVideoUpload(file);
+            }}
           />
+
           <p className="text-gray-500 text-xs mt-1">
-            Paste a Facebook Reel, Facebook Video, or YouTube link. The video
-            will be embedded on the story page.
+            Upload a video or paste a Facebook Reel / YouTube link.
           </p>
           {videoUrl && (
             <div className="mt-2 flex items-center gap-2 text-green-400 text-sm">
