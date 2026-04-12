@@ -135,18 +135,8 @@ export default async function HomePage({
         </section>
       )}
 
-      {/* Non-hero fallback */}
-      {!heroPost && (
-        <section className="hero-gradient relative rounded-2xl overflow-hidden mb-12 mx-4 sm:mx-6">
-          <div className="relative z-10 text-center py-20 sm:py-24 px-6">
-            <h1 className="text-4xl sm:text-5xl font-bold text-gradient-gold mb-4 tracking-tight">නොකී කතා</h1>
-            <p className="text-lg text-gray-500 mb-2 font-light tracking-wide">Untold Stories</p>
-            <p className="text-gray-600 max-w-xl mx-auto text-sm leading-relaxed">
-              ලෝකයේ අභිරහස්, සැබෑ අපරාධ, ඉතිහාසය සහ භූ දේශපාලනය පිළිබඳ ඔබ නොදන්නා කතා එකතුව
-            </p>
-          </div>
-        </section>
-      )}
+      {/* Spacer when hero is hidden (category filter active) */}
+      {!heroPost && <div className="h-6" />}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Ad: Leaderboard */}
