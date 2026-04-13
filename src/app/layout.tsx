@@ -3,6 +3,7 @@ import { Noto_Sans_Sinhala } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { Analytics } from "@vercel/analytics/next";
 
 const sinhalaFont = Noto_Sans_Sinhala({
   variable: "--font-sinhala",
@@ -60,6 +61,7 @@ export default function RootLayout({
         <Header />
         <main className="flex-1 relative z-10">{children}</main>
         <Footer />
+        <Analytics />
       </body>
     </html>
   );
