@@ -2,9 +2,8 @@ name: Update Facebook Posts
 
 on:
   schedule:
-    # Run every 3 hours
     - cron: '0 */3 * * *'
-  workflow_dispatch: # Allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -41,10 +40,15 @@ jobs:
           const newPosts = JSON.parse(fs.readFileSync('scripts/categorized_posts.json', 'utf-8'));
           const existing = JSON.parse(fs.readFileSync('src/data/posts.json', 'utf-8'));
 
-          // Build map of existing posts (keyed by id) to preserve manual edits
-          const existingMap = new Map(existing.map(p => [p.id, p]));
+          console.log('Facebook returned: ' + newPosts.length + ' posts');
+          console.log('Existing posts: ' + existing.length);
 
-          // Add only genuinely new posts from Facebook
+          if (newPosts.length < 10 && existing.length > 100) {
+            console.log('WARNING: Facebook returned too few posts. Skipping to prevent data loss.');
+            process.exit(0);
+          }
+
+          const existingMap = new Map(existing.map(p => [p.id, p]));
           let added = 0;
           for (const post of newPosts) {
             if (!existingMap.has(post.id)) {
@@ -53,7 +57,6 @@ jobs:
             }
           }
 
-          // Sort by date descending
           const merged = Array.from(existingMap.values())
             .sort((a, b) => new Date(b.created_time) - new Date(a.created_time));
 
@@ -71,11 +74,20 @@ jobs:
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
-          git pull --rebase origin main || git rebase --abort
+
+          # Save our updated files
+          cp src/data/posts.json /tmp/updated_posts.json
+          cp src/data/categories.json /tmp/updated_categories.json
+
+          # Pull latest from remote (avoids rebase conflicts)
+          git checkout -- .
+          git pull origin main
+
+          # Restore our updates
+          cp /tmp/updated_posts.json src/data/posts.json
+          cp /tmp/updated_categories.json src/data/categories.json
+
+          # Commit and push
           git add src/data/posts.json src/data/categories.json
           git diff --cached --quiet || git commit -m "Auto-update: Fetch latest Facebook posts"
-          git push || {
-            echo "Push failed, retrying with fresh pull..."
-            git pull --rebase origin main
-            git push
-          }
+          git push
