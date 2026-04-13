@@ -34,7 +34,7 @@ async function fetchAllPosts() {
 
     if (data.error) {
       console.error('Facebook API Error:', data.error);
-      break;
+      process.exit(1);
     }
 
     if (data.data) {
@@ -47,6 +47,10 @@ async function fetchAllPosts() {
   }
 
   console.log(`\nTotal posts fetched: ${allPosts.length}`);
+  if (allPosts.length === 0) {
+    console.error('ERROR: No posts fetched. Token may be expired. Aborting to prevent data loss.');
+    process.exit(1);
+  }
   fs.writeFileSync(
     path.join(__dirname, 'posts.json'),
     JSON.stringify(allPosts, null, 2),

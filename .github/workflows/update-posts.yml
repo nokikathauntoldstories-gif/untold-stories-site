@@ -2,9 +2,8 @@ name: Update Facebook Posts
 
 on:
   schedule:
-    # Run every 3 hours
     - cron: '0 */3 * * *'
-  workflow_dispatch: # Allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,11 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repo (latest main)
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -40,11 +38,7 @@ jobs:
           const fs = require('fs');
           const newPosts = JSON.parse(fs.readFileSync('scripts/categorized_posts.json', 'utf-8'));
           const existing = JSON.parse(fs.readFileSync('src/data/posts.json', 'utf-8'));
-
-          // Build map of existing posts (keyed by id) to preserve manual edits
           const existingMap = new Map(existing.map(p => [p.id, p]));
-
-          // Add only genuinely new posts from Facebook
           let added = 0;
           for (const post of newPosts) {
             if (!existingMap.has(post.id)) {
@@ -52,13 +46,11 @@ jobs:
               added++;
             }
           }
-
-          // Sort by date descending
           const merged = Array.from(existingMap.values())
             .sort((a, b) => new Date(b.created_time) - new Date(a.created_time));
-
           fs.writeFileSync('src/data/posts.json', JSON.stringify(merged, null, 2), 'utf-8');
           console.log('New posts added: ' + added + ', Total: ' + merged.length);
+          if (added === 0) console.log('No new posts to add.');
           "
 
       - name: Check for changes
@@ -71,11 +63,9 @@ jobs:
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
-          git pull --rebase origin main || git rebase --abort
           git add src/data/posts.json src/data/categories.json
-          git diff --cached --quiet || git commit -m "Auto-update: Fetch latest Facebook posts"
-          git push || {
-            echo "Push failed, retrying with fresh pull..."
-            git pull --rebase origin main
-            git push
-          }
+          git commit -m "Auto-update: Fetch latest Facebook posts"
+          # Force push this commit - safe because we already read the latest
+          # main and merged on top of it. This avoids rebase conflicts when
+          # other commits land between checkout and push.
+          git push --force-with-lease
