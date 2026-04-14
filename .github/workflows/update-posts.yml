@@ -30,39 +30,10 @@ jobs:
           FACEBOOK_PAGE_ID: '842442602292665'
         run: node scripts/fetch-posts.js
 
-      - name: Categorize posts
-        run: node scripts/categorize-posts.js
-
-      - name: Merge new posts into existing data
-        run: |
-          node -e "
-          const fs = require('fs');
-          const newPosts = JSON.parse(fs.readFileSync('scripts/categorized_posts.json', 'utf-8'));
-          const existing = JSON.parse(fs.readFileSync('src/data/posts.json', 'utf-8'));
-
-          console.log('Facebook returned: ' + newPosts.length + ' posts');
-          console.log('Existing posts: ' + existing.length);
-
-          if (newPosts.length < 10 && existing.length > 100) {
-            console.log('WARNING: Facebook returned too few posts. Skipping to prevent data loss.');
-            process.exit(0);
-          }
-
-          const existingMap = new Map(existing.map(p => [p.id, p]));
-          let added = 0;
-          for (const post of newPosts) {
-            if (!existingMap.has(post.id)) {
-              existingMap.set(post.id, post);
-              added++;
-            }
-          }
-
-          const merged = Array.from(existingMap.values())
-            .sort((a, b) => new Date(b.created_time) - new Date(a.created_time));
-
-          fs.writeFileSync('src/data/posts.json', JSON.stringify(merged, null, 2), 'utf-8');
-          console.log('New posts added: ' + added + ', Total: ' + merged.length);
-          "
+      - name: Categorize new posts with AI and merge
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/categorize-with-ai.js
 
       - name: Check for changes
         id: changes
@@ -77,7 +48,6 @@ jobs:
 
           # Save our updated files
           cp src/data/posts.json /tmp/updated_posts.json
-          cp src/data/categories.json /tmp/updated_categories.json
 
           # Pull latest from remote (avoids rebase conflicts)
           git checkout -- .
@@ -85,9 +55,8 @@ jobs:
 
           # Restore our updates
           cp /tmp/updated_posts.json src/data/posts.json
-          cp /tmp/updated_categories.json src/data/categories.json
 
           # Commit and push
-          git add src/data/posts.json src/data/categories.json
+          git add src/data/posts.json
           git diff --cached --quiet || git commit -m "Auto-update: Fetch latest Facebook posts"
           git push
