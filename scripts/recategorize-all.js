@@ -13,7 +13,7 @@ const CATEGORIES = {
   'true-crime': { slug: 'true-crime', name: 'සැබෑ අපරාධ', nameEn: 'True Crime', emoji: '🔪', description: 'Murders, criminal investigations, forensic cases' },
   historical: { slug: 'historical', name: 'ඉතිහාසය', nameEn: 'Historical Events', emoji: '📜', description: 'Civil rights, historical figures, wars, significant events' },
   geopolitics: { slug: 'geopolitics', name: 'භූ දේශපාලනය', nameEn: 'Geopolitics', emoji: '🌍', description: 'International politics, current affairs, diplomacy' },
-  psychology: { slug: 'psychology', name: 'මනෝවිද්‍යාව', nameEn: 'Psychology', emoji: '🧠', description: 'Human behavior, social experiments, psychological phenomena' },
+  inspiring: { slug: 'inspiring', name: 'ආශ්වාදජනක කතා', nameEn: 'Inspiring Stories', emoji: '❤️', description: 'Heroism, family bonds, overcoming adversity, heartwarming human stories' },
   other: { slug: 'other', name: 'වෙනත්', nameEn: 'Other', emoji: '📰', description: 'Other interesting stories' },
 };
 
@@ -70,8 +70,8 @@ CATEGORIES:
 - true-crime: Murders, criminal investigations, fraud, scams, serial killers, kidnappings, solved crimes
 - historical: Historical figures, events, wars, inventions, achievements, famous people biographies, company/brand origins
 - geopolitics: International politics, current affairs, diplomacy, country conflicts, government actions, terrorism
-- psychology: Human behavior, social experiments, psychological studies, mental health
-- other: Cultural traditions, inspirational stories, interesting facts, lifestyle, technology, meta/promotional posts, anything not clearly above
+- inspiring: Heroism, family sacrifice, overcoming adversity, heartwarming human stories, emotional reunions, courage, loyalty
+- other: Cultural traditions, interesting facts, lifestyle, technology, anything not clearly above
 
 RULES:
 - A crime story with a known criminal = true-crime, NOT mysteries
@@ -80,6 +80,8 @@ RULES:
 - Company/brand founding stories = historical
 - Promotional/meta posts about the page itself = other
 - If unsure between mysteries and true-crime: if there's a specific criminal or victim, it's true-crime
+- Stories focused on human courage, sacrifice, emotional bonds, overcoming hardship, or loyalty are "inspiring"
+- Psychology/human behavior stories should go to "other" or "inspiring" depending on emotional focus
 
 POSTS:
 ${items}

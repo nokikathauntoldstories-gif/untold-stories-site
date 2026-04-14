@@ -10,7 +10,7 @@ const navItems = [
   { href: "/category/true-crime", label: "සැබෑ අපරාධ", exact: false },
   { href: "/category/historical", label: "ඉතිහාසය", exact: false },
   { href: "/category/geopolitics", label: "භූ දේශපාලනය", exact: false },
-  { href: "/category/psychology", label: "මනෝවිද්‍යාව", exact: false },
+  { href: "/category/inspiring", label: "ආශ්වාදජනක කතා", exact: false },
   { href: "/category/other", label: "වෙනත්", exact: false },
   { href: "/about", label: "අපි ගැන", exact: false },
 ];

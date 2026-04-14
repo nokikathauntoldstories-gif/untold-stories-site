@@ -13,7 +13,7 @@ const CATEGORIES = {
   'true-crime': { slug: 'true-crime', name: 'සැබෑ අපරාධ', nameEn: 'True Crime', emoji: '🔪', description: 'Murders, criminal investigations, forensic cases' },
   historical: { slug: 'historical', name: 'ඉතිහාසය', nameEn: 'Historical Events', emoji: '📜', description: 'Civil rights, historical figures, wars, significant events' },
   geopolitics: { slug: 'geopolitics', name: 'භූ දේශපාලනය', nameEn: 'Geopolitics', emoji: '🌍', description: 'International politics, current affairs, diplomacy' },
-  psychology: { slug: 'psychology', name: 'මනෝවිද්‍යාව', nameEn: 'Psychology', emoji: '🧠', description: 'Human behavior, social experiments, psychological phenomena' },
+  inspiring: { slug: 'inspiring', name: 'ආශ්වාදජනක කතා', nameEn: 'Inspiring Stories', emoji: '❤️', description: 'Heroism, family bonds, overcoming adversity, heartwarming human stories' },
   other: { slug: 'other', name: 'වෙනත්', nameEn: 'Other', emoji: '📰', description: 'Other interesting stories' },
 };
 
@@ -79,14 +79,15 @@ async function categorizePost(post) {
 - true-crime: Murders, criminal investigations, forensic cases, fraud, scams, serial killers, kidnappings
 - historical: Historical figures, events, wars, inventions, historical achievements, biographical stories of famous people
 - geopolitics: International politics, current affairs, diplomacy, country conflicts, government actions
-- psychology: Human behavior, social experiments, psychological studies, mental health phenomena
-- other: Cultural traditions, inspirational stories, interesting facts, lifestyle, technology, anything that doesn't clearly fit above
+- inspiring: Heroism, family sacrifice, overcoming adversity, heartwarming human stories, emotional reunions, courage
+- other: Cultural traditions, interesting facts, lifestyle, technology, anything that doesn't clearly fit above
 
 IMPORTANT RULES:
 - If the story is about a SOLVED crime or criminal case, it's "true-crime" not "mysteries"
 - If the story is about a historical person's life/achievements, it's "historical" not "mysteries"
 - "mysteries" is ONLY for genuinely unsolved/unexplained events
 - Cultural customs, traditions, and interesting facts are "other"
+- Stories focused on human courage, sacrifice, emotional bonds, or overcoming hardship are "inspiring"
 - Stories about famous companies, brands, or inventions are "historical"
 
 Post:
