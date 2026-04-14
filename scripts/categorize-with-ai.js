@@ -58,8 +58,20 @@ function callClaude(messages) {
   });
 }
 
-async function categorizePost(message) {
-  const truncated = message.substring(0, 800);
+function getAttachmentTitle(post) {
+  try {
+    const att = post.attachments?.data?.[0];
+    if (att?.title) return att.title;
+    if (att?.description) return att.description;
+  } catch (e) {}
+  return '';
+}
+
+async function categorizePost(post) {
+  const message = post.message || '';
+  const title = getAttachmentTitle(post);
+  const content = title ? `${message}\n\n[Attachment title: ${title}]` : message;
+  const truncated = content.substring(0, 800);
 
   const prompt = `You are a content categorizer for a Sinhala storytelling website. Categorize this Facebook post into exactly ONE of these categories:
 
@@ -114,7 +126,7 @@ async function main() {
   // Categorize each new post with Claude
   for (const post of uncategorized) {
     try {
-      const category = await categorizePost(post.message);
+      const category = await categorizePost(post);
       post.category = category;
       post.categoryInfo = CATEGORIES[category] || CATEGORIES.other;
       const snippet = post.message.substring(0, 60).replace(/\n/g, ' ');

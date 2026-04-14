@@ -58,7 +58,9 @@ function callClaude(prompt) {
 async function categorizeBatch(posts) {
   const items = posts.map((p, i) => {
     const msg = p.message.substring(0, 400).replace(/\n+/g, ' ');
-    return `[${i}] ${msg}`;
+    const title = p.attachments?.data?.[0]?.title || p.attachments?.data?.[0]?.description || '';
+    const line = title ? `${msg}\n[Attachment title: ${title}]` : msg;
+    return `[${i}] ${line}`;
   }).join('\n\n');
 
   const prompt = `You are a content categorizer for a Sinhala storytelling website. Categorize each post into exactly ONE category.
