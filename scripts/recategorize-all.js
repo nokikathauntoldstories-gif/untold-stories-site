@@ -117,35 +117,46 @@ async function main() {
   }
 
   console.log(`Posts to categorize: ${withMessage.length}`);
-  const BATCH_SIZE = 20;
+  const BATCH_SIZE = 10;
   let changed = 0;
 
   for (let b = 0; b < withMessage.length; b += BATCH_SIZE) {
     const batch = withMessage.slice(b, b + BATCH_SIZE);
     const batchNum = Math.floor(b / BATCH_SIZE) + 1;
     const totalBatches = Math.ceil(withMessage.length / BATCH_SIZE);
-    process.stdout.write(`Batch ${batchNum}/${totalBatches}...`);
 
-    try {
-      const results = await categorizeBatch(batch);
-      for (const [localIdx, cat] of Object.entries(results)) {
-        const globalIdx = indices[b + parseInt(localIdx)];
-        const post = posts[globalIdx];
-        const oldCat = post.category;
-        if (oldCat !== cat) {
-          post.category = cat;
-          post.categoryInfo = CATEGORIES[cat];
-          changed++;
+    let success = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      process.stdout.write(`Batch ${batchNum}/${totalBatches}${attempt > 0 ? ` (retry ${attempt})` : ''}...`);
+      try {
+        const results = await categorizeBatch(batch);
+        for (const [localIdx, cat] of Object.entries(results)) {
+          const globalIdx = indices[b + parseInt(localIdx)];
+          const post = posts[globalIdx];
+          if (post.category !== cat) {
+            post.category = cat;
+            post.categoryInfo = CATEGORIES[cat];
+            changed++;
+          }
+        }
+        console.log(` done (${Object.keys(results).length} categorized)`);
+        success = true;
+        break;
+      } catch (err) {
+        if (err.message.includes('rate limit')) {
+          console.log(` rate limited, waiting 65s...`);
+          await new Promise(r => setTimeout(r, 65000));
+        } else {
+          console.log(` ERROR: ${err.message}`);
+          break;
         }
       }
-      console.log(` done (${Object.keys(results).length} categorized)`);
-    } catch (err) {
-      console.log(` ERROR: ${err.message}`);
     }
+    if (!success) console.log(` SKIPPED batch ${batchNum}`);
 
-    // Rate limit pause
+    // Pause between batches
     if (b + BATCH_SIZE < withMessage.length) {
-      await new Promise(r => setTimeout(r, 8000));
+      await new Promise(r => setTimeout(r, 5000));
     }
   }
 
