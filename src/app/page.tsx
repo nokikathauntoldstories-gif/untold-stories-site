@@ -1,9 +1,18 @@
 import StoryCard from "@/components/StoryCard";
 import AdSlot from "@/components/AdSlot";
 import Link from "next/link";
-import { getAllPosts, getCategoryStats, getPostTitle, getPostExcerpt, getPostImage, formatDate } from "@/lib/posts";
+import { getAllPosts, getCategoryStats, getPostTitle, getPostExcerpt, getPostImage, formatDate, getAllCategories } from "@/lib/posts";
 
 const POSTS_PER_PAGE = 24;
+
+// Pick a "random" post based on the day — changes daily, not on every refresh
+function getDailyFeatured(posts: ReturnType<typeof getAllPosts>) {
+  const withImages = posts.filter(p => getPostImage(p));
+  if (withImages.length === 0) return null;
+  const today = new Date();
+  const dayIndex = (today.getFullYear() * 366 + today.getMonth() * 31 + today.getDate());
+  return withImages[dayIndex % withImages.length];
+}
 
 export default async function HomePage({
   searchParams,
@@ -26,24 +35,41 @@ export default async function HomePage({
     currentPage * POSTS_PER_PAGE
   );
   const categoryStats = getCategoryStats();
+  const categories = getAllCategories();
 
-  // Featured stories (top 4 with images, only on page 1 with no filter)
-  const featuredPosts = !filterCategory && currentPage === 1
-    ? allPostsUnfiltered.filter(p => getPostImage(p)).slice(0, 4)
+  // Magazine layout only on page 1 with no filter
+  const showMagazine = !filterCategory && currentPage === 1;
+
+  // Daily featured post (changes each day, not the latest)
+  const featuredPost = showMagazine ? getDailyFeatured(allPostsUnfiltered) : null;
+
+  // Get latest 2 posts per category for the category showcase
+  const categoryHighlights = showMagazine
+    ? Object.values(categories).map(cat => ({
+        category: cat,
+        posts: allPostsUnfiltered
+          .filter(p => p.category === cat.slug && getPostImage(p) && p.id !== featuredPost?.id)
+          .slice(0, 2),
+      })).filter(ch => ch.posts.length > 0)
     : [];
 
-  const heroPost = featuredPosts[0];
-  const sideFeatures = featuredPosts.slice(1, 4);
+  // For the "latest" section, skip posts already shown in hero + category highlights
+  const shownIds = new Set<string>();
+  if (featuredPost) shownIds.add(featuredPost.id);
+  categoryHighlights.forEach(ch => ch.posts.forEach(p => shownIds.add(p.id)));
+
+  const latestPosts = showMagazine
+    ? allPostsUnfiltered.filter(p => !shownIds.has(p.id)).slice(0, 12)
+    : posts;
 
   return (
     <div className="noise-overlay">
-      {/* HERO - Cinematic featured story section */}
-      {heroPost && (
+      {/* HERO - Daily Featured Story */}
+      {featuredPost && showMagazine && (
         <section className="relative mb-16">
-          {/* Background image with cinematic overlay */}
           <div className="absolute inset-0 overflow-hidden">
             <img
-              src={getPostImage(heroPost)!}
+              src={getPostImage(featuredPost)!}
               alt=""
               className="w-full h-full object-cover scale-110 blur-xl opacity-40"
             />
@@ -52,41 +78,38 @@ export default async function HomePage({
           </div>
 
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
-            {/* Top bar */}
             <div className="flex items-center justify-between py-8 sm:py-10">
               <div className="inline-flex items-center gap-2.5 bg-white/[0.03] backdrop-blur-xl border border-white/[0.05] rounded-full px-4 py-2">
                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full pulse-live" />
                 <span className="text-gray-500 text-[11px] tracking-wider font-medium uppercase">
-                  කතා {allPostsUnfiltered.length}+
+                  අදින කතාව
                 </span>
               </div>
             </div>
 
-            {/* Hero content - featured story + side stories */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 pb-14">
-              {/* Main hero story */}
+            <div className="pb-14">
               <Link
-                href={`/story/${heroPost.id.replace(/\//g, '_')}`}
-                className="lg:col-span-3 group relative rounded-2xl overflow-hidden min-h-[340px] sm:min-h-[460px] img-zoom"
+                href={`/story/${featuredPost.id.replace(/\//g, '_')}`}
+                className="group relative rounded-2xl overflow-hidden block min-h-[340px] sm:min-h-[460px] img-zoom"
               >
                 <img
-                  src={getPostImage(heroPost)!}
-                  alt={getPostTitle(heroPost)}
+                  src={getPostImage(featuredPost)!}
+                  alt={getPostTitle(featuredPost)}
                   className="w-full h-full object-cover absolute inset-0"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-7 sm:p-10">
                   <span className="inline-block bg-gold-500/90 backdrop-blur-sm text-navy-950 text-[10px] font-bold px-3 py-1.5 rounded-lg mb-4 uppercase tracking-widest">
-                    {heroPost.categoryInfo.emoji} {heroPost.categoryInfo.name}
+                    {featuredPost.categoryInfo.emoji} {featuredPost.categoryInfo.name}
                   </span>
-                  <h2 className="text-white font-bold text-xl sm:text-2xl md:text-[2.2rem] leading-snug group-hover:text-gold-200 transition-colors duration-700 line-clamp-3 mb-3">
-                    {getPostTitle(heroPost)}
+                  <h2 className="text-white font-bold text-xl sm:text-2xl md:text-[2.2rem] leading-snug group-hover:text-gold-200 transition-colors duration-700 line-clamp-3 mb-3 max-w-3xl">
+                    {getPostTitle(featuredPost)}
                   </h2>
                   <p className="text-gray-400/70 text-sm line-clamp-2 max-w-lg hidden sm:block leading-relaxed">
-                    {getPostExcerpt(heroPost)}
+                    {getPostExcerpt(featuredPost)}
                   </p>
                   <div className="flex items-center gap-5 mt-5">
-                    <time className="text-gray-600 text-[11px] font-medium">{formatDate(heroPost.created_time)}</time>
+                    <time className="text-gray-600 text-[11px] font-medium">{formatDate(featuredPost.created_time)}</time>
                     <span className="text-gold-400/70 text-[11px] font-medium group-hover:text-gold-300 flex items-center gap-2 transition-all duration-500">
                       කියවන්න
                       <svg className="w-3.5 h-3.5 group-hover:translate-x-1.5 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,51 +119,74 @@ export default async function HomePage({
                   </div>
                 </div>
               </Link>
-
-              {/* Side stories stack */}
-              <div className="lg:col-span-2 flex flex-col gap-3">
-                {sideFeatures.map((fp, i) => (
-                  <Link
-                    key={fp.id}
-                    href={`/story/${fp.id.replace(/\//g, '_')}`}
-                    className="group relative rounded-xl overflow-hidden flex-1 min-h-[120px] flex"
-                  >
-                    {/* Thumbnail */}
-                    <div className="w-28 sm:w-32 flex-shrink-0 relative overflow-hidden img-zoom">
-                      <img
-                        src={getPostImage(fp)!}
-                        alt={getPostTitle(fp)}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    {/* Content */}
-                    <div className="flex-1 bg-navy-900/50 backdrop-blur-xl p-4 flex flex-col justify-center border border-white/[0.03] border-l-0 rounded-r-xl group-hover:bg-navy-800/40 transition-all duration-500">
-                      <span className="text-gold-500/50 text-[9px] font-semibold uppercase tracking-widest mb-1.5">
-                        {fp.categoryInfo.emoji} {fp.categoryInfo.nameEn}
-                      </span>
-                      <h3 className="text-gray-300 font-semibold text-[13px] leading-snug group-hover:text-gold-300 transition-colors duration-500 line-clamp-2 mb-2">
-                        {getPostTitle(fp)}
-                      </h3>
-                      <time className="text-gray-700 text-[10px] font-medium">{formatDate(fp.created_time)}</time>
-                    </div>
-                    {/* Number badge */}
-                    <div className="absolute top-2.5 left-2.5 number-badge">
-                      <span>{i + 2}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* Spacer when hero is hidden (category filter active) */}
-      {!heroPost && <div className="h-6" />}
+      {/* Spacer when hero is hidden */}
+      {!showMagazine && <div className="h-6" />}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {/* Ad: Leaderboard */}
         <AdSlot type="leaderboard" className="mb-12" />
+
+        {/* CATEGORY HIGHLIGHTS - Magazine section */}
+        {showMagazine && categoryHighlights.length > 0 && (
+          <section className="mb-16">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="section-accent">
+                <h2 className="text-gray-300 font-semibold text-base tracking-tight">
+                  ප්‍රවර්ග අනුව
+                </h2>
+              </div>
+              <div className="h-px flex-1 bg-gradient-to-r from-navy-700/40 to-transparent" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {categoryHighlights.map(({ category, posts: catPosts }) => (
+                <div key={category.slug}>
+                  <Link
+                    href={`/category/${category.slug}`}
+                    className="flex items-center gap-2 mb-4 group"
+                  >
+                    <span className="text-lg">{category.emoji}</span>
+                    <h3 className="text-gold-400/80 font-semibold text-[13px] tracking-tight group-hover:text-gold-300 transition-colors">
+                      {category.name}
+                    </h3>
+                    <svg className="w-3.5 h-3.5 text-gray-700 group-hover:text-gold-400 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </Link>
+                  <div className="space-y-3">
+                    {catPosts.map((post) => (
+                      <Link
+                        key={post.id}
+                        href={`/story/${post.id.replace(/\//g, '_')}`}
+                        className="group flex gap-3 rounded-xl overflow-hidden hover:bg-white/[0.02] transition-all duration-300 p-2 -mx-2"
+                      >
+                        <div className="w-20 h-20 sm:w-24 sm:h-20 flex-shrink-0 rounded-lg overflow-hidden">
+                          <img
+                            src={getPostImage(post)!}
+                            alt={getPostTitle(post)}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          <h4 className="text-gray-300 font-medium text-[13px] leading-snug group-hover:text-gold-300 transition-colors duration-300 line-clamp-2">
+                            {getPostTitle(post)}
+                          </h4>
+                          <time className="text-gray-700 text-[10px] font-medium mt-1.5">
+                            {formatDate(post.created_time)}
+                          </time>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Category Filter */}
         <div className="flex flex-wrap gap-2 mb-12 justify-center">
@@ -167,26 +213,37 @@ export default async function HomePage({
             <h2 className="text-gray-300 font-semibold text-base tracking-tight">
               {filterCategory
                 ? categoryStats.find(c => c.category.slug === filterCategory)?.category.name || "කතා"
-                : "සියලුම කතා"}
+                : showMagazine ? "නවතම කතා" : "සියලුම කතා"}
             </h2>
           </div>
           <div className="h-px flex-1 bg-gradient-to-r from-navy-700/40 to-transparent" />
-          <span className="text-gray-700 text-[11px] font-medium tracking-wider uppercase">{allPosts.length} results</span>
+          <span className="text-gray-700 text-[11px] font-medium tracking-wider uppercase">
+            {showMagazine ? `${latestPosts.length} latest` : `${allPosts.length} results`}
+          </span>
         </div>
 
         <div className="flex gap-10">
           {/* Main content */}
           <div className="flex-1 min-w-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {posts.map((post, i) => (
+              {latestPosts.map((post, i) => (
                 <div key={post.id} style={{ animationDelay: `${i * 0.03}s` }} className="animate-fade-up">
                   <StoryCard post={post} />
                 </div>
               ))}
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
+            {/* "See all" button on magazine view, pagination on filtered view */}
+            {showMagazine ? (
+              <div className="flex justify-center mt-12">
+                <Link
+                  href="/?page=1&category="
+                  className="px-8 py-3 bg-navy-900/40 border border-navy-700/30 text-gray-400 rounded-xl hover:border-gold-500/20 hover:text-gold-400 text-sm transition-all duration-300"
+                >
+                  සියලුම කතා බලන්න &rarr;
+                </Link>
+              </div>
+            ) : totalPages > 1 && (
               <div className="flex justify-center items-center gap-2 mt-16">
                 {currentPage > 1 && (
                   <Link
