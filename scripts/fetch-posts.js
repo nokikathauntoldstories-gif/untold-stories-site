@@ -6,6 +6,26 @@ const https = require('https');
 const TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
 const PAGE_ID = process.env.FACEBOOK_PAGE_ID || '842442602292665';
 
+// Strip lone/broken Unicode surrogate halves that Facebook sometimes returns
+// (mangled emoji). These corrupt JSON when sent to APIs like Claude.
+function stripLoneSurrogates(str) {
+  return str.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
+            .replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '$1');
+}
+
+function sanitizeStrings(obj) {
+  if (typeof obj === 'string') return stripLoneSurrogates(obj);
+  if (Array.isArray(obj)) return obj.map(sanitizeStrings);
+  if (obj && typeof obj === 'object') {
+    const cleaned = {};
+    for (const [key, value] of Object.entries(obj)) {
+      cleaned[key] = sanitizeStrings(value);
+    }
+    return cleaned;
+  }
+  return obj;
+}
+
 function fetchJSON(url) {
   return new Promise((resolve, reject) => {
     https.get(url, (res) => {
@@ -51,12 +71,13 @@ async function fetchAllPosts() {
     console.error('ERROR: No posts fetched. Token may be expired. Aborting to prevent data loss.');
     process.exit(1);
   }
+  const sanitized = sanitizeStrings(allPosts);
   fs.writeFileSync(
     path.join(__dirname, 'posts.json'),
-    JSON.stringify(allPosts, null, 2),
+    JSON.stringify(sanitized, null, 2),
     'utf-8'
   );
-  console.log('Saved to posts.json');
+  console.log('Saved to posts.json (sanitized)');
   return allPosts;
 }
 

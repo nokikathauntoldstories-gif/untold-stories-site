@@ -3,15 +3,16 @@ import AdSlot from "@/components/AdSlot";
 import Link from "next/link";
 import { getAllPosts, getCategoryStats, getPostTitle, getPostExcerpt, getPostImage, formatDate, getAllCategories } from "@/lib/posts";
 
+export const dynamic = 'force-dynamic';
+
 const POSTS_PER_PAGE = 24;
 
-// Pick a "random" post based on the day — changes daily, not on every refresh
-function getDailyFeatured(posts: ReturnType<typeof getAllPosts>) {
-  const withImages = posts.filter(p => getPostImage(p));
-  if (withImages.length === 0) return null;
-  const today = new Date();
-  const dayIndex = (today.getFullYear() * 366 + today.getMonth() * 31 + today.getDate());
-  return withImages[dayIndex % withImages.length];
+// Pick a random featured post from mysteries, true-crime, or inspiring — changes each load
+const FEATURED_CATEGORIES = ['mysteries', 'true-crime', 'inspiring'];
+function getRandomFeatured(posts: ReturnType<typeof getAllPosts>) {
+  const eligible = posts.filter(p => getPostImage(p) && FEATURED_CATEGORIES.includes(p.category));
+  if (eligible.length === 0) return null;
+  return eligible[Math.floor(Math.random() * eligible.length)];
 }
 
 export default async function HomePage({
@@ -40,8 +41,8 @@ export default async function HomePage({
   // Magazine layout only on page 1 with no filter
   const showMagazine = !filterCategory && currentPage === 1;
 
-  // Daily featured post (changes each day, not the latest)
-  const featuredPost = showMagazine ? getDailyFeatured(allPostsUnfiltered) : null;
+  // Random featured post from mysteries/true-crime/inspiring — changes each load
+  const featuredPost = showMagazine ? getRandomFeatured(allPostsUnfiltered) : null;
 
   // Get latest 2 posts per category for the category showcase
   const categoryHighlights = showMagazine
@@ -114,7 +115,7 @@ export default async function HomePage({
               <div className="inline-flex items-center gap-2.5 bg-white/[0.03] backdrop-blur-xl border border-white/[0.05] rounded-full px-4 py-2">
                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full pulse-live" />
                 <span className="text-gray-500 text-[11px] tracking-wider font-medium uppercase">
-                  අදින කතාව
+                  විශේෂ තේරීම
                 </span>
               </div>
             </div>
