@@ -53,13 +53,45 @@ export default async function HomePage({
       })).filter(ch => ch.posts.length > 0)
     : [];
 
-  // For the "latest" section, skip posts already shown in hero + category highlights
+  // Collect IDs already shown in hero + category highlights
   const shownIds = new Set<string>();
   if (featuredPost) shownIds.add(featuredPost.id);
   categoryHighlights.forEach(ch => ch.posts.forEach(p => shownIds.add(p.id)));
 
+  const remaining = allPostsUnfiltered.filter(p => !shownIds.has(p.id));
+
+  // 🔀 Random picks — 3 random posts (seeded by hour so they change but not on every refresh)
+  const randomPosts = showMagazine ? (() => {
+    const withImages = remaining.filter(p => getPostImage(p));
+    const now = new Date();
+    const seed = now.getFullYear() * 10000 + now.getMonth() * 100 + now.getDate() + now.getHours();
+    const picked: typeof withImages = [];
+    const pool = [...withImages];
+    for (let i = 0; i < 3 && pool.length > 0; i++) {
+      const idx = (seed * (i + 7) + i * 31) % pool.length;
+      picked.push(pool.splice(idx, 1)[0]);
+    }
+    return picked;
+  })() : [];
+
+  // 📅 From the archives — 3 posts older than 30 days
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const archivePosts = showMagazine
+    ? remaining
+        .filter(p => new Date(p.created_time) < thirtyDaysAgo && getPostImage(p) && !randomPosts.some(r => r.id === p.id))
+        .sort(() => {
+          const now = new Date();
+          const seed = now.getFullYear() * 366 + now.getMonth() * 31 + now.getDate();
+          return (seed % 3) - 1;
+        })
+        .slice(0, 3)
+    : [];
+
+  // 🆕 Truly latest — 3 newest posts
   const latestPosts = showMagazine
-    ? allPostsUnfiltered.filter(p => !shownIds.has(p.id)).slice(0, 12)
+    ? remaining
+        .filter(p => !randomPosts.some(r => r.id === p.id) && !archivePosts.some(a => a.id === p.id))
+        .slice(0, 3)
     : posts;
 
   return (
@@ -207,43 +239,99 @@ export default async function HomePage({
           ))}
         </div>
 
-        {/* Section heading */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="section-accent">
-            <h2 className="text-gray-300 font-semibold text-base tracking-tight">
-              {filterCategory
-                ? categoryStats.find(c => c.category.slug === filterCategory)?.category.name || "කතා"
-                : showMagazine ? "නවතම කතා" : "සියලුම කතා"}
-            </h2>
-          </div>
-          <div className="h-px flex-1 bg-gradient-to-r from-navy-700/40 to-transparent" />
-          <span className="text-gray-700 text-[11px] font-medium tracking-wider uppercase">
-            {showMagazine ? `${latestPosts.length} latest` : `${allPosts.length} results`}
-          </span>
-        </div>
+        {/* THREE-SECTION DISCOVERY LAYOUT (magazine view) */}
+        {showMagazine && (
+          <section className="mb-16">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+
+              {/* 🔀 Random Picks */}
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="text-lg">🔀</span>
+                  <div className="section-accent">
+                    <h2 className="text-gray-300 font-semibold text-base tracking-tight">අහඹු කතා</h2>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {randomPosts.map((post) => (
+                    <StoryCard key={post.id} post={post} />
+                  ))}
+                </div>
+              </div>
+
+              {/* 📅 From the Archives */}
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="text-lg">📅</span>
+                  <div className="section-accent">
+                    <h2 className="text-gray-300 font-semibold text-base tracking-tight">අතීතයෙන්</h2>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {archivePosts.map((post) => (
+                    <StoryCard key={post.id} post={post} />
+                  ))}
+                </div>
+              </div>
+
+              {/* 🆕 Latest */}
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="text-lg">🆕</span>
+                  <div className="section-accent">
+                    <h2 className="text-gray-300 font-semibold text-base tracking-tight">නවතම</h2>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {latestPosts.map((post) => (
+                    <StoryCard key={post.id} post={post} />
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            <div className="flex justify-center mt-12">
+              <Link
+                href="/?page=1&category="
+                className="px-8 py-3 bg-navy-900/40 border border-navy-700/30 text-gray-400 rounded-xl hover:border-gold-500/20 hover:text-gold-400 text-sm transition-all duration-300"
+              >
+                සියලුම කතා බලන්න &rarr;
+              </Link>
+            </div>
+          </section>
+        )}
+
+        {/* FILTERED/PAGINATED VIEW (non-magazine) */}
+        {!showMagazine && (
+          <>
+            <div className="flex items-center gap-4 mb-8">
+              <div className="section-accent">
+                <h2 className="text-gray-300 font-semibold text-base tracking-tight">
+                  {filterCategory
+                    ? categoryStats.find(c => c.category.slug === filterCategory)?.category.name || "කතා"
+                    : "සියලුම කතා"}
+                </h2>
+              </div>
+              <div className="h-px flex-1 bg-gradient-to-r from-navy-700/40 to-transparent" />
+              <span className="text-gray-700 text-[11px] font-medium tracking-wider uppercase">{allPosts.length} results</span>
+            </div>
+          </>
+        )}
 
         <div className="flex gap-10">
-          {/* Main content */}
+          {/* Main content — only for filtered/paginated view */}
+          {!showMagazine && (
           <div className="flex-1 min-w-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {latestPosts.map((post, i) => (
+              {posts.map((post, i) => (
                 <div key={post.id} style={{ animationDelay: `${i * 0.03}s` }} className="animate-fade-up">
                   <StoryCard post={post} />
                 </div>
               ))}
             </div>
 
-            {/* "See all" button on magazine view, pagination on filtered view */}
-            {showMagazine ? (
-              <div className="flex justify-center mt-12">
-                <Link
-                  href="/?page=1&category="
-                  className="px-8 py-3 bg-navy-900/40 border border-navy-700/30 text-gray-400 rounded-xl hover:border-gold-500/20 hover:text-gold-400 text-sm transition-all duration-300"
-                >
-                  සියලුම කතා බලන්න &rarr;
-                </Link>
-              </div>
-            ) : totalPages > 1 && (
+            {totalPages > 1 && (
               <div className="flex justify-center items-center gap-2 mt-16">
                 {currentPage > 1 && (
                   <Link
@@ -286,6 +374,7 @@ export default async function HomePage({
               </div>
             )}
           </div>
+          )}
 
           {/* Sidebar - desktop only */}
           <aside className="hidden xl:block w-72 shrink-0 space-y-6">
