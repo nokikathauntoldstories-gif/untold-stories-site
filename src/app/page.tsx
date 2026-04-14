@@ -319,9 +319,9 @@ export default async function HomePage({
           </>
         )}
 
+        {!showMagazine && (
         <div className="flex gap-10">
           {/* Main content — only for filtered/paginated view */}
-          {!showMagazine && (
           <div className="flex-1 min-w-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {posts.map((post, i) => (
@@ -374,8 +374,6 @@ export default async function HomePage({
               </div>
             )}
           </div>
-          )}
-
           {/* Sidebar - desktop only */}
           <aside className="hidden xl:block w-72 shrink-0 space-y-6">
             <AdSlot type="sidebar" />
@@ -421,6 +419,7 @@ export default async function HomePage({
             <AdSlot type="sidebar" />
           </aside>
         </div>
+        )}
       </div>
     </div>
   );

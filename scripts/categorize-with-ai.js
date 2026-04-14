@@ -19,6 +19,16 @@ const CATEGORIES = {
 
 const VALID_CATEGORIES = Object.keys(CATEGORIES);
 
+// Safely truncate a string without breaking Unicode surrogate pairs
+function safeTruncate(str, maxLen) {
+  if (str.length <= maxLen) return str;
+  let end = maxLen;
+  // If we're cutting in the middle of a surrogate pair, step back one
+  const code = str.charCodeAt(end - 1);
+  if (code >= 0xD800 && code <= 0xDBFF) end--;
+  return str.substring(0, end);
+}
+
 function callClaude(messages) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
@@ -71,7 +81,7 @@ async function categorizePost(post) {
   const message = post.message || '';
   const title = getAttachmentTitle(post);
   const content = title ? `${message}\n\n[Attachment title: ${title}]` : message;
-  const truncated = content.substring(0, 800);
+  const truncated = safeTruncate(content, 800);
 
   const prompt = `You are a content categorizer for a Sinhala storytelling website. Categorize this Facebook post into exactly ONE of these categories:
 

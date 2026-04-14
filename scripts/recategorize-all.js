@@ -19,6 +19,16 @@ const CATEGORIES = {
 
 const VALID = Object.keys(CATEGORIES);
 
+// Safely truncate a string without breaking Unicode surrogate pairs
+function safeTruncate(str, maxLen) {
+  if (str.length <= maxLen) return str;
+  let end = maxLen;
+  // If we're cutting in the middle of a surrogate pair, step back one
+  const code = str.charCodeAt(end - 1);
+  if (code >= 0xD800 && code <= 0xDBFF) end--;
+  return str.substring(0, end);
+}
+
 function callClaude(prompt) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
@@ -57,7 +67,7 @@ function callClaude(prompt) {
 
 async function categorizeBatch(posts) {
   const items = posts.map((p, i) => {
-    const msg = p.message.substring(0, 400).replace(/\n+/g, ' ');
+    const msg = safeTruncate(p.message, 400).replace(/\n+/g, ' ');
     const title = p.attachments?.data?.[0]?.title || p.attachments?.data?.[0]?.description || '';
     const line = title ? `${msg}\n[Attachment title: ${title}]` : msg;
     return `[${i}] ${line}`;

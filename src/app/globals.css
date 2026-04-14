@@ -259,11 +259,8 @@ body {
 
 .ambient-glow::after {
   content: '';
-  position: absolute;
-  top: -50%;
-  left: -20%;
-  width: 140%;
-  height: 200%;
+  position: fixed;
+  inset: 0;
   background: radial-gradient(ellipse at 50% 0%, rgba(201, 162, 39, 0.02) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
