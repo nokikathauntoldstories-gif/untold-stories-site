@@ -27,12 +27,12 @@
     "emoji": "🌍",
     "description": "International politics, current affairs, diplomacy"
   },
-  "psychology": {
-    "slug": "psychology",
-    "name": "මනෝවිද්‍යාව",
-    "nameEn": "Psychology",
-    "emoji": "🧠",
-    "description": "Human behavior, social experiments, psychological phenomena"
+  "inspiring": {
+    "slug": "inspiring",
+    "name": "ආශ්වාදජනක කතා",
+    "nameEn": "Inspiring Stories",
+    "emoji": "❤️",
+    "description": "Heroism, family bonds, overcoming adversity, heartwarming human stories"
   },
   "other": {
     "slug": "other",
