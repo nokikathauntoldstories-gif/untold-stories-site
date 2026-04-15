@@ -181,13 +181,13 @@ export default async function StoryPage({
           </div>
         )}
 
-        {/* Featured Image */}
+        {/* Featured Image — object-contain so portraits/faces never get cropped */}
         {!videoUrl && images[0] && (
-          <div className="image-frame mb-10">
+          <div className="image-frame mb-10 bg-navy-900/40 flex items-center justify-center">
             <img
               src={images[0]}
               alt={title}
-              className="w-full max-h-[520px] object-cover"
+              className="w-full max-h-[640px] object-contain"
             />
           </div>
         )}
@@ -204,15 +204,15 @@ export default async function StoryPage({
           ))}
         </div>
 
-        {/* Additional images */}
+        {/* Additional images — object-contain so nothing gets cropped */}
         {images.length > 1 && (
-          <div className="mt-10 grid grid-cols-2 gap-4">
+          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
             {images.slice(1).map((img, idx) => (
-              <div key={idx} className="image-frame img-zoom">
+              <div key={idx} className="image-frame bg-navy-900/40 flex items-center justify-center">
                 <img
                   src={img}
                   alt={`${title} - ${idx + 2}`}
-                  className="w-full h-52 object-cover"
+                  className="w-full max-h-80 object-contain"
                   loading="lazy"
                 />
               </div>
