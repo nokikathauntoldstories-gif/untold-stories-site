@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Noto_Sans_Sinhala } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -57,13 +56,13 @@ export default function RootLayout({
   return (
     <html lang="si" className={`${sinhalaFont.variable} h-full antialiased`}>
       <head>
-        {/* Google AdSense */}
-        <Script
-          id="adsense-init"
+        {/* Google AdSense — literal script tag so it appears in the SSR HTML
+            that Google's verifier fetches (next/script afterInteractive only
+            injects after hydration, which the verifier can't see). */}
+        <script
           async
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
           crossOrigin="anonymous"
-          strategy="afterInteractive"
         />
         <meta name="google-adsense-account" content={ADSENSE_CLIENT_ID} />
       </head>
