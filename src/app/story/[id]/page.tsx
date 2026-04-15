@@ -9,6 +9,7 @@ import {
   getPostExcerpt,
   getPostImages,
   getVideoUrl,
+  isDirectVideoFile,
   formatDate,
 } from "@/lib/posts";
 import AdSlot from "@/components/AdSlot";
@@ -159,14 +160,24 @@ export default async function StoryPage({
 
         <div className="divider-gold mb-10" />
 
-        {/* Video Embed for Reels */}
+        {/* Video: native <video> for direct files, Facebook embed for FB reel/video URLs */}
         {videoUrl && (
           <div className="mb-10 rounded-2xl overflow-hidden border border-navy-700/40 bg-navy-900/40 p-6">
             <div className="flex items-center gap-2.5 mb-4">
               <span className="text-red-500 text-lg">&#9654;</span>
               <span className="text-gold-400 font-semibold text-[13px]">වීඩියෝව</span>
             </div>
-            <FacebookVideoEmbed videoUrl={videoUrl} />
+            {isDirectVideoFile(videoUrl) ? (
+              <video
+                src={videoUrl}
+                controls
+                playsInline
+                preload="metadata"
+                className="w-full rounded-lg max-h-[520px] bg-black"
+              />
+            ) : (
+              <FacebookVideoEmbed videoUrl={videoUrl} />
+            )}
           </div>
         )}
 

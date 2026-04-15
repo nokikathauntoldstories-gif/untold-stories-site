@@ -107,12 +107,20 @@ export function formatDate(dateStr: string): string {
   });
 }
 
+const DIRECT_VIDEO_EXT = /\.(mp4|webm|mov|m4v|ogv|ogg)(\?|$)/i;
+
+export function isDirectVideoFile(url: string): boolean {
+  return DIRECT_VIDEO_EXT.test(url);
+}
+
 export function getVideoUrl(post: Post): string | null {
   if (!post.attachments?.data) return null;
   for (const att of post.attachments.data) {
-    if (att.url && (att.url.includes('/reel/') || att.url.includes('/video/'))) {
-      return att.url;
-    }
+    if (!att.url) continue;
+    // Facebook reel / video URLs (for FB-sourced posts)
+    if (att.url.includes('/reel/') || att.url.includes('/video/')) return att.url;
+    // Admin-uploaded direct video files (Vercel Blob, etc.)
+    if (isDirectVideoFile(att.url)) return att.url;
   }
   return null;
 }
