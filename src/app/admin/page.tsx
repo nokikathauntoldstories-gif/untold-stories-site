@@ -11,6 +11,13 @@ const CATEGORIES = [
   { value: "other", label: "📰 වෙනත් — Other" },
 ];
 
+const MAX_IMAGES = 8;
+
+interface PostAttachment {
+  media?: { image?: { src: string } };
+  url?: string;
+}
+
 interface PostItem {
   id: string;
   message: string;
@@ -18,6 +25,19 @@ interface PostItem {
   categoryInfo?: { emoji: string; nameEn: string };
   created_time: string;
   full_picture?: string;
+  attachments?: { data: PostAttachment[] };
+}
+
+function extractImages(post: PostItem): string[] {
+  const imgs: string[] = [];
+  if (post.full_picture) imgs.push(post.full_picture);
+  if (post.attachments?.data) {
+    for (const a of post.attachments.data) {
+      const src = a.media?.image?.src;
+      if (src && !imgs.includes(src)) imgs.push(src);
+    }
+  }
+  return imgs;
 }
 
 interface ResultMsg {
@@ -35,7 +55,8 @@ export default function AdminPage() {
   // Create post state
   const [message, setMessage] = useState("");
   const [category, setCategory] = useState("mysteries");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [imageUrlInput, setImageUrlInput] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [postToFb, setPostToFb] = useState(true);
   const [publishing, setPublishing] = useState(false);
@@ -56,7 +77,8 @@ export default function AdminPage() {
   const [editingPost, setEditingPost] = useState<PostItem | null>(null);
   const [editMessage, setEditMessage] = useState("");
   const [editCategory, setEditCategory] = useState("");
-  const [editImageUrl, setEditImageUrl] = useState("");
+  const [editImageUrls, setEditImageUrls] = useState<string[]>([]);
+  const [editImageUrlInput, setEditImageUrlInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -78,31 +100,103 @@ export default function AdminPage() {
     }
   };
 
-  const handleFileUpload = async (file: File, type: "image" | "video") => {
-    if (type === "image") setUploading(true);
-    else setUploadingVideo(true);
+  const uploadSingle = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch("/api/admin/upload", {
+      method: "POST",
+      headers: { "x-admin-password": password },
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Upload failed");
+    return data.url as string;
+  };
 
+  const handleImagesUpload = async (
+    files: FileList,
+    target: "create" | "edit"
+  ) => {
+    setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        headers: { "x-admin-password": password },
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
-
-      if (type === "image") setImageUrl(data.url);
-      else setVideoUrl(data.url);
+      const current = target === "create" ? imageUrls : editImageUrls;
+      const remaining = MAX_IMAGES - current.length;
+      if (remaining <= 0) {
+        alert(`Maximum ${MAX_IMAGES} images allowed.`);
+        return;
+      }
+      const toUpload = Array.from(files).slice(0, remaining);
+      const uploaded: string[] = [];
+      for (const file of toUpload) {
+        uploaded.push(await uploadSingle(file));
+      }
+      if (target === "create") {
+        setImageUrls((prev) => [...prev, ...uploaded]);
+      } else {
+        setEditImageUrls((prev) => [...prev, ...uploaded]);
+      }
+      if (files.length > remaining) {
+        alert(`Only added ${remaining} image(s). Max ${MAX_IMAGES} per post.`);
+      }
     } catch (err) {
-      alert(`${type} upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      alert(`Image upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
-      if (type === "image") setUploading(false);
-      else setUploadingVideo(false);
+      setUploading(false);
     }
+  };
+
+  const handleVideoUpload = async (file: File) => {
+    setUploadingVideo(true);
+    try {
+      const url = await uploadSingle(file);
+      setVideoUrl(url);
+    } catch (err) {
+      alert(`Video upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
+  const addImageUrl = (target: "create" | "edit") => {
+    const raw = (target === "create" ? imageUrlInput : editImageUrlInput).trim();
+    if (!raw) return;
+    const current = target === "create" ? imageUrls : editImageUrls;
+    if (current.length >= MAX_IMAGES) {
+      alert(`Maximum ${MAX_IMAGES} images allowed.`);
+      return;
+    }
+    if (current.includes(raw)) {
+      if (target === "create") setImageUrlInput("");
+      else setEditImageUrlInput("");
+      return;
+    }
+    if (target === "create") {
+      setImageUrls((prev) => [...prev, raw]);
+      setImageUrlInput("");
+    } else {
+      setEditImageUrls((prev) => [...prev, raw]);
+      setEditImageUrlInput("");
+    }
+  };
+
+  const removeImageAt = (idx: number, target: "create" | "edit") => {
+    if (target === "create") {
+      setImageUrls((prev) => prev.filter((_, i) => i !== idx));
+    } else {
+      setEditImageUrls((prev) => prev.filter((_, i) => i !== idx));
+    }
+  };
+
+  const moveImage = (idx: number, dir: -1 | 1, target: "create" | "edit") => {
+    const swap = (arr: string[]): string[] => {
+      const j = idx + dir;
+      if (j < 0 || j >= arr.length) return arr;
+      const next = arr.slice();
+      [next[idx], next[j]] = [next[j], next[idx]];
+      return next;
+    };
+    if (target === "create") setImageUrls(swap);
+    else setEditImageUrls(swap);
   };
 
   const handlePublish = useCallback(async () => {
@@ -120,7 +214,7 @@ export default function AdminPage() {
         body: JSON.stringify({
           message: message.trim(),
           category,
-          imageUrl: imageUrl.trim() || null,
+          imageUrls,
           videoUrl: videoUrl.trim() || null,
           postToFb,
         }),
@@ -145,7 +239,8 @@ export default function AdminPage() {
               : " (Facebook post skipped)"),
         });
         setMessage("");
-        setImageUrl("");
+        setImageUrls([]);
+        setImageUrlInput("");
         setVideoUrl("");
       } else {
         setResult({ error: data.error || "Publishing failed" });
@@ -157,7 +252,7 @@ export default function AdminPage() {
     } finally {
       setPublishing(false);
     }
-  }, [message, category, imageUrl, videoUrl, postToFb, password]);
+  }, [message, category, imageUrls, videoUrl, postToFb, password]);
 
   // Fetch posts for manage tab
   const fetchPosts = useCallback(async (page = 1) => {
@@ -196,7 +291,8 @@ export default function AdminPage() {
     setEditingPost(post);
     setEditMessage(post.message);
     setEditCategory(post.category);
-    setEditImageUrl(post.full_picture || "");
+    setEditImageUrls(extractImages(post));
+    setEditImageUrlInput("");
     setManageResult(null);
   };
 
@@ -216,7 +312,7 @@ export default function AdminPage() {
           postId: editingPost.id,
           message: editMessage.trim(),
           category: editCategory,
-          imageUrl: editImageUrl.trim() || null,
+          imageUrls: editImageUrls,
         }),
       });
 
@@ -227,13 +323,23 @@ export default function AdminPage() {
           message: data.message +
             (data.fbEdited ? " (Facebook updated)" : data.fbError ? ` (Facebook: ${data.fbError})` : ""),
         });
-        // Update locally
+        // Update locally — rebuild attachments shape to mirror server, preserve non-image attachments
         setPosts((prev) =>
-          prev.map((p) =>
-            p.id === editingPost.id
-              ? { ...p, message: editMessage.trim(), category: editCategory, full_picture: editImageUrl.trim() || undefined }
-              : p
-          )
+          prev.map((p) => {
+            if (p.id !== editingPost.id) return p;
+            const preservedNonImage = (p.attachments?.data || []).filter((a) => !a.media?.image);
+            const rebuilt: PostAttachment[] = [
+              ...editImageUrls.map((src) => ({ media: { image: { src } } })),
+              ...preservedNonImage,
+            ];
+            return {
+              ...p,
+              message: editMessage.trim(),
+              category: editCategory,
+              full_picture: editImageUrls[0] || undefined,
+              attachments: rebuilt.length > 0 ? { data: rebuilt } : undefined,
+            };
+          })
         );
         setEditingPost(null);
       } else {
@@ -402,46 +508,88 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Image Upload */}
+          {/* Images (up to MAX_IMAGES) */}
           <div className="mb-6">
-            <label className="block text-gray-300 text-sm font-medium mb-2">Featured Image</label>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Images <span className="text-gray-500 text-xs">(first = featured / Facebook cover · up to {MAX_IMAGES})</span>
+            </label>
             <div className="flex gap-3">
               <button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="flex items-center gap-2 bg-navy-800 border border-navy-600 hover:border-gold-500/50 rounded-lg px-5 py-3 text-gray-300 text-sm transition-colors"
+                disabled={uploading || imageUrls.length >= MAX_IMAGES}
+                className="flex items-center gap-2 bg-navy-800 border border-navy-600 hover:border-gold-500/50 rounded-lg px-5 py-3 text-gray-300 text-sm transition-colors disabled:opacity-50"
               >
-                {uploading ? "Uploading..." : "Upload Image"}
+                {uploading ? "Uploading..." : `Upload Images (${imageUrls.length}/${MAX_IMAGES})`}
               </button>
               <input
                 type="url"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="or paste image URL here"
+                value={imageUrlInput}
+                onChange={(e) => setImageUrlInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addImageUrl("create"))}
+                placeholder="or paste image URL + Enter"
                 className="flex-1 bg-navy-800 border border-navy-600 rounded-lg px-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gold-500/50 text-sm"
               />
+              <button
+                onClick={() => addImageUrl("create")}
+                disabled={!imageUrlInput.trim() || imageUrls.length >= MAX_IMAGES}
+                className="bg-navy-800 border border-navy-600 hover:border-gold-500/50 rounded-lg px-4 py-3 text-gray-300 text-sm transition-colors disabled:opacity-50"
+              >
+                Add
+              </button>
             </div>
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleFileUpload(file, "image");
+                const files = e.target.files;
+                if (files && files.length > 0) handleImagesUpload(files, "create");
+                e.target.value = "";
               }}
             />
-            {imageUrl && (
-              <div className="mt-3 relative inline-block">
-                <div className="rounded-lg overflow-hidden border border-navy-600 max-w-xs">
-                  <img src={imageUrl} alt="Preview" className="w-full h-40 object-cover" />
-                </div>
-                <button
-                  onClick={() => setImageUrl("")}
-                  className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-500 text-white w-6 h-6 rounded-full text-xs flex items-center justify-center"
-                >
-                  x
-                </button>
+            {imageUrls.length > 0 && (
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {imageUrls.map((url, idx) => (
+                  <div key={`${url}-${idx}`} className="relative group">
+                    <div className={`rounded-lg overflow-hidden border ${idx === 0 ? "border-gold-500/60" : "border-navy-600"}`}>
+                      <img src={url} alt={`Image ${idx + 1}`} className="w-full h-28 object-cover" />
+                    </div>
+                    {idx === 0 && (
+                      <span className="absolute top-1 left-1 bg-gold-500 text-navy-950 text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                        Featured
+                      </span>
+                    )}
+                    <button
+                      onClick={() => removeImageAt(idx, "create")}
+                      className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-500 text-white w-6 h-6 rounded-full text-xs flex items-center justify-center"
+                      title="Remove"
+                    >
+                      x
+                    </button>
+                    <div className="absolute bottom-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {idx > 0 && (
+                        <button
+                          onClick={() => moveImage(idx, -1, "create")}
+                          className="bg-navy-900/80 hover:bg-navy-800 text-gray-200 w-6 h-6 rounded text-xs flex items-center justify-center"
+                          title="Move left"
+                        >
+                          ←
+                        </button>
+                      )}
+                      {idx < imageUrls.length - 1 && (
+                        <button
+                          onClick={() => moveImage(idx, 1, "create")}
+                          className="bg-navy-900/80 hover:bg-navy-800 text-gray-200 w-6 h-6 rounded text-xs flex items-center justify-center"
+                          title="Move right"
+                        >
+                          →
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -472,7 +620,7 @@ export default function AdminPage() {
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) handleFileUpload(file, "video");
+                if (file) handleVideoUpload(file);
               }}
             />
             {videoUrl && (
@@ -666,62 +814,91 @@ export default function AdminPage() {
 
                       <div className="mb-4">
                         <label className="block text-gray-400 text-xs font-medium mb-1">
-                          Image <span className="text-gray-500">(image changes apply to website only, not Facebook)</span>
+                          Images <span className="text-gray-500">(first = featured · website only, Facebook unchanged · up to {MAX_IMAGES})</span>
                         </label>
                         <div className="flex gap-3">
                           <button
                             onClick={() => editFileInputRef.current?.click()}
-                            disabled={editUploading}
-                            className="flex items-center gap-2 bg-navy-800 border border-navy-600 hover:border-gold-500/50 rounded-lg px-4 py-2 text-gray-300 text-xs transition-colors"
+                            disabled={editUploading || uploading || editImageUrls.length >= MAX_IMAGES}
+                            className="flex items-center gap-2 bg-navy-800 border border-navy-600 hover:border-gold-500/50 rounded-lg px-4 py-2 text-gray-300 text-xs transition-colors disabled:opacity-50"
                           >
-                            {editUploading ? "Uploading..." : "Upload Image"}
+                            {(editUploading || uploading) ? "Uploading..." : `Upload (${editImageUrls.length}/${MAX_IMAGES})`}
                           </button>
                           <input
                             type="url"
-                            value={editImageUrl}
-                            onChange={(e) => setEditImageUrl(e.target.value)}
-                            placeholder="or paste image URL"
+                            value={editImageUrlInput}
+                            onChange={(e) => setEditImageUrlInput(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addImageUrl("edit"))}
+                            placeholder="or paste image URL + Enter"
                             className="flex-1 bg-navy-800 border border-navy-600 rounded-lg px-3 py-2 text-gray-200 text-sm focus:outline-none focus:border-gold-500/50"
                           />
+                          <button
+                            onClick={() => addImageUrl("edit")}
+                            disabled={!editImageUrlInput.trim() || editImageUrls.length >= MAX_IMAGES}
+                            className="bg-navy-800 border border-navy-600 hover:border-gold-500/50 rounded-lg px-3 py-2 text-gray-300 text-xs transition-colors disabled:opacity-50"
+                          >
+                            Add
+                          </button>
                         </div>
                         <input
                           ref={editFileInputRef}
                           type="file"
                           accept="image/*"
+                          multiple
                           className="hidden"
                           onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
+                            const files = e.target.files;
+                            if (!files || files.length === 0) return;
                             setEditUploading(true);
                             try {
-                              const formData = new FormData();
-                              formData.append("file", file);
-                              const res = await fetch("/api/admin/upload", {
-                                method: "POST",
-                                headers: { "x-admin-password": password },
-                                body: formData,
-                              });
-                              const data = await res.json();
-                              if (!res.ok) throw new Error(data.error);
-                              setEditImageUrl(data.url);
-                            } catch (err) {
-                              alert("Upload failed: " + (err instanceof Error ? err.message : "Unknown error"));
+                              await handleImagesUpload(files, "edit");
                             } finally {
                               setEditUploading(false);
+                              e.target.value = "";
                             }
                           }}
                         />
-                        {editImageUrl && (
-                          <div className="mt-2 relative inline-block">
-                            <div className="rounded-lg overflow-hidden border border-navy-600 max-w-[120px]">
-                              <img src={editImageUrl} alt="Preview" className="w-full h-20 object-cover" />
-                            </div>
-                            <button
-                              onClick={() => setEditImageUrl("")}
-                              className="absolute -top-1 -right-1 bg-red-600 hover:bg-red-500 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center"
-                            >
-                              x
-                            </button>
+                        {editImageUrls.length > 0 && (
+                          <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {editImageUrls.map((url, idx) => (
+                              <div key={`${url}-${idx}`} className="relative group">
+                                <div className={`rounded-lg overflow-hidden border ${idx === 0 ? "border-gold-500/60" : "border-navy-600"}`}>
+                                  <img src={url} alt={`Image ${idx + 1}`} className="w-full h-20 object-cover" />
+                                </div>
+                                {idx === 0 && (
+                                  <span className="absolute top-0.5 left-0.5 bg-gold-500 text-navy-950 text-[9px] font-semibold px-1 py-0.5 rounded">
+                                    Featured
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => removeImageAt(idx, "edit")}
+                                  className="absolute -top-1 -right-1 bg-red-600 hover:bg-red-500 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center"
+                                  title="Remove"
+                                >
+                                  x
+                                </button>
+                                <div className="absolute bottom-0.5 right-0.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  {idx > 0 && (
+                                    <button
+                                      onClick={() => moveImage(idx, -1, "edit")}
+                                      className="bg-navy-900/80 hover:bg-navy-800 text-gray-200 w-5 h-5 rounded text-xs flex items-center justify-center"
+                                      title="Move left"
+                                    >
+                                      ←
+                                    </button>
+                                  )}
+                                  {idx < editImageUrls.length - 1 && (
+                                    <button
+                                      onClick={() => moveImage(idx, 1, "edit")}
+                                      className="bg-navy-900/80 hover:bg-navy-800 text-gray-200 w-5 h-5 rounded text-xs flex items-center justify-center"
+                                      title="Move right"
+                                    >
+                                      →
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>

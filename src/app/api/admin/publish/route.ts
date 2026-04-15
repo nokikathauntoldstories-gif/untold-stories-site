@@ -13,21 +13,28 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { message, category, imageUrl, videoUrl, postToFb } = await req.json();
+    const { message, category, imageUrl, imageUrls, videoUrl, postToFb } = await req.json();
 
     if (!message || !category) {
       return NextResponse.json({ error: "Message and category are required" }, { status: 400 });
     }
 
+    // Normalize to an array. Prefer new `imageUrls` field; fall back to legacy `imageUrl`.
+    const normalizedImages: string[] = Array.isArray(imageUrls)
+      ? imageUrls.filter((u: unknown): u is string => typeof u === "string" && u.trim().length > 0).map((u: string) => u.trim())
+      : imageUrl
+      ? [String(imageUrl).trim()].filter((u) => u.length > 0)
+      : [];
+
     const categoryInfo = CATEGORIES[category] || CATEGORIES.other;
     let fbPostId = null;
     let fbError: string | null = null;
-    const fbImageUrl = imageUrl || null;
+    const firstImage = normalizedImages[0] || null;
 
-    // 1. Post to Facebook if requested
+    // 1. Post to Facebook if requested (single image only — first one)
     if (postToFb) {
       try {
-        const fbResult = await postToFacebook(message, imageUrl || undefined);
+        const fbResult = await postToFacebook(message, firstImage || undefined);
         fbPostId = fbResult.id || fbResult.post_id;
       } catch (err) {
         fbError = err instanceof Error ? err.message : String(err);
@@ -38,8 +45,8 @@ export async function POST(req: NextRequest) {
     // 2. Create post object
     const postId = fbPostId || `${FB_PAGE_ID}_${Date.now()}`;
     const attachmentData: Record<string, unknown>[] = [];
-    if (fbImageUrl) {
-      attachmentData.push({ media: { image: { src: fbImageUrl } } });
+    for (const img of normalizedImages) {
+      attachmentData.push({ media: { image: { src: img } } });
     }
     if (videoUrl) {
       attachmentData.push({ url: videoUrl });
@@ -49,7 +56,7 @@ export async function POST(req: NextRequest) {
       id: postId,
       message,
       created_time: new Date().toISOString(),
-      full_picture: fbImageUrl,
+      full_picture: firstImage,
       attachments: attachmentData.length > 0 ? { data: attachmentData } : undefined,
       category,
       categoryInfo,

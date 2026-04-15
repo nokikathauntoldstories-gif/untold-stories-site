@@ -11,7 +11,7 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
-    const { postId, message, category, imageUrl } = await req.json();
+    const { postId, message, category, imageUrl, imageUrls } = await req.json();
 
     if (!postId || !message || !category) {
       return NextResponse.json({ error: "postId, message, and category are required" }, { status: 400 });
@@ -38,11 +38,35 @@ export async function PUT(req: NextRequest) {
 
     // Update post in array
     const categoryInfo = CATEGORIES[category] || CATEGORIES.other;
-    const post = posts[postIndex];
+    const post = posts[postIndex] as Record<string, unknown>;
     post.message = message;
     post.category = category;
     post.categoryInfo = categoryInfo;
-    if (imageUrl !== undefined) {
+
+    if (Array.isArray(imageUrls)) {
+      // New multi-image mode: rebuild image attachments, preserve video/link attachments
+      const normalized: string[] = imageUrls
+        .filter((u: unknown): u is string => typeof u === "string" && u.trim().length > 0)
+        .map((u: string) => u.trim());
+
+      post.full_picture = normalized[0] || null;
+
+      const existingAttachments =
+        (post.attachments as { data?: Array<Record<string, unknown>> } | undefined)?.data || [];
+      // Keep non-image attachments (videos/reels have `url` but no media.image)
+      const preservedNonImage = existingAttachments.filter((a) => {
+        const media = a.media as { image?: unknown } | undefined;
+        return !media?.image;
+      });
+
+      const rebuilt: Record<string, unknown>[] = [
+        ...normalized.map((img) => ({ media: { image: { src: img } } })),
+        ...preservedNonImage,
+      ];
+
+      post.attachments = rebuilt.length > 0 ? { data: rebuilt } : undefined;
+    } else if (imageUrl !== undefined) {
+      // Legacy single-image mode: preserve original behavior (only update full_picture)
       post.full_picture = imageUrl || null;
     }
 

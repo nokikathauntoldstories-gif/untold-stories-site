@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
     categoryInfo: p.categoryInfo,
     created_time: p.created_time,
     full_picture: p.full_picture,
+    attachments: p.attachments,
   }));
 
   return NextResponse.json({ posts, total, page, totalPages });
