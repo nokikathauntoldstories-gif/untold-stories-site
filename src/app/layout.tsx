@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { Noto_Sans_Sinhala } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Analytics } from "@vercel/analytics/next";
+
+const ADSENSE_CLIENT_ID = "ca-pub-9816831671391733";
 
 const sinhalaFont = Noto_Sans_Sinhala({
   variable: "--font-sinhala",
@@ -54,8 +57,15 @@ export default function RootLayout({
   return (
     <html lang="si" className={`${sinhalaFont.variable} h-full antialiased`}>
       <head>
-        {/* AdSense: Replace ca-pub-XXXXXXX with your AdSense publisher ID */}
-        {/* <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXX" crossOrigin="anonymous"></script> */}
+        {/* Google AdSense */}
+        <Script
+          id="adsense-init"
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+        <meta name="google-adsense-account" content={ADSENSE_CLIENT_ID} />
       </head>
       <body className="min-h-full flex flex-col ambient-glow">
         <Header />
