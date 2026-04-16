@@ -113,10 +113,31 @@ export function isDirectVideoFile(url: string): boolean {
   return DIRECT_VIDEO_EXT.test(url);
 }
 
+export function isYouTubeUrl(url: string): boolean {
+  return /(?:youtube\.com|youtu\.be)/i.test(url);
+}
+
+// Return the 11-char YouTube video ID, or null if not a YouTube URL
+export function getYouTubeId(url: string): string | null {
+  if (!isYouTubeUrl(url)) return null;
+  // https://youtu.be/VIDEO_ID
+  let m = url.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  // https://www.youtube.com/watch?v=VIDEO_ID
+  m = url.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  // https://www.youtube.com/embed/VIDEO_ID or /shorts/VIDEO_ID or /live/VIDEO_ID
+  m = url.match(/youtube\.com\/(?:embed|shorts|live|v)\/([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  return null;
+}
+
 export function getVideoUrl(post: Post): string | null {
   if (!post.attachments?.data) return null;
   for (const att of post.attachments.data) {
     if (!att.url) continue;
+    // YouTube (admin-pasted)
+    if (isYouTubeUrl(att.url)) return att.url;
     // Facebook reel / video URLs (for FB-sourced posts)
     if (att.url.includes('/reel/') || att.url.includes('/video/')) return att.url;
     // Admin-uploaded direct video files (Vercel Blob, etc.)

@@ -56,10 +56,8 @@ export default function AdminPage() {
   const [postToFb, setPostToFb] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [result, setResult] = useState<ResultMsg | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
 
   // Manage posts state
   const [posts, setPosts] = useState<PostItem[]>([]);
@@ -154,18 +152,6 @@ export default function AdminPage() {
       alert(`Image upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setUploading(false);
-    }
-  };
-
-  const handleVideoUpload = async (file: File) => {
-    setUploadingVideo(true);
-    try {
-      const url = await uploadSingle(file);
-      setVideoUrl(url);
-    } catch (err) {
-      alert(`Video upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
-    } finally {
-      setUploadingVideo(false);
     }
   };
 
@@ -608,36 +594,22 @@ export default function AdminPage() {
 
           {/* Video */}
           <div className="mb-6">
-            <label className="block text-gray-300 text-sm font-medium mb-2">Video (optional)</label>
-            <div className="flex gap-3">
-              <button
-                onClick={() => videoInputRef.current?.click()}
-                disabled={uploadingVideo}
-                className="flex items-center gap-2 bg-navy-800 border border-navy-600 hover:border-gold-500/50 rounded-lg px-5 py-3 text-gray-300 text-sm transition-colors"
-              >
-                {uploadingVideo ? "Uploading..." : "Upload Video"}
-              </button>
-              <input
-                type="url"
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder="or paste video/reel URL here"
-                className="flex-1 bg-navy-800 border border-navy-600 rounded-lg px-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gold-500/50 text-sm"
-              />
-            </div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Video <span className="text-gray-500 text-xs">(optional — paste YouTube / Facebook URL)</span>
+            </label>
             <input
-              ref={videoInputRef}
-              type="file"
-              accept="video/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleVideoUpload(file);
-              }}
+              type="url"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+              className="w-full bg-navy-800 border border-navy-600 rounded-lg px-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gold-500/50 text-sm"
             />
+            <p className="mt-2 text-gray-500 text-xs leading-relaxed">
+              💡 Upload your video to <a href="https://studio.youtube.com/channel/UC/videos/upload" target="_blank" rel="noopener noreferrer" className="text-gold-400 hover:text-gold-300">YouTube</a> first (free, unlimited), then paste the video URL here. Works with youtube.com/watch, youtu.be, shorts, and Facebook reel URLs.
+            </p>
             {videoUrl && (
               <div className="mt-2 flex items-center gap-2 text-green-400 text-sm">
-                <span>Video attached</span>
+                <span>✓ Video URL attached</span>
                 <button onClick={() => setVideoUrl("")} className="text-red-400 hover:text-red-300 ml-2">x Remove</button>
               </div>
             )}

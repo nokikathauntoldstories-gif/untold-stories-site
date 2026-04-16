@@ -10,6 +10,7 @@ import {
   getPostImages,
   getVideoUrl,
   isDirectVideoFile,
+  getYouTubeId,
   formatDate,
 } from "@/lib/posts";
 import AdSlot from "@/components/AdSlot";
@@ -160,26 +161,41 @@ export default async function StoryPage({
 
         <div className="divider-gold mb-10" />
 
-        {/* Video: native <video> for direct files, Facebook embed for FB reel/video URLs */}
-        {videoUrl && (
-          <div className="mb-10 rounded-2xl overflow-hidden border border-navy-700/40 bg-navy-900/40 p-6">
-            <div className="flex items-center gap-2.5 mb-4">
-              <span className="text-red-500 text-lg">&#9654;</span>
-              <span className="text-gold-400 font-semibold text-[13px]">වීඩියෝව</span>
+        {/* Video: YouTube iframe, native <video> for direct files, or FB embed */}
+        {videoUrl && (() => {
+          const ytId = getYouTubeId(videoUrl);
+          return (
+            <div className="mb-10 rounded-2xl overflow-hidden border border-navy-700/40 bg-navy-900/40 p-6">
+              <div className="flex items-center gap-2.5 mb-4">
+                <span className="text-red-500 text-lg">&#9654;</span>
+                <span className="text-gold-400 font-semibold text-[13px]">වීඩියෝව</span>
+              </div>
+              {ytId ? (
+                <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${ytId}`}
+                    title={title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    className="absolute inset-0 w-full h-full border-0"
+                  />
+                </div>
+              ) : isDirectVideoFile(videoUrl) ? (
+                <video
+                  src={videoUrl}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="w-full rounded-lg max-h-[520px] bg-black"
+                />
+              ) : (
+                <FacebookVideoEmbed videoUrl={videoUrl} />
+              )}
             </div>
-            {isDirectVideoFile(videoUrl) ? (
-              <video
-                src={videoUrl}
-                controls
-                playsInline
-                preload="metadata"
-                className="w-full rounded-lg max-h-[520px] bg-black"
-              />
-            ) : (
-              <FacebookVideoEmbed videoUrl={videoUrl} />
-            )}
-          </div>
-        )}
+          );
+        })()}
 
         {/* Featured Image — object-contain so portraits/faces never get cropped */}
         {!videoUrl && images[0] && (
