@@ -1,15 +1,9 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { CATEGORY_OPTIONS } from "@/lib/categories";
 
-const CATEGORIES = [
-  { value: "mysteries", label: "🔍 අභිරහස් — Mysteries" },
-  { value: "true-crime", label: "🔪 සැබෑ අපරාධ — True Crime" },
-  { value: "historical", label: "📜 ඉතිහාසය — Historical Events" },
-  { value: "geopolitics", label: "🌍 භූ දේශපාලනය — Geopolitics" },
-  { value: "psychology", label: "🧠 මනෝවිද්‍යාව — Psychology" },
-  { value: "other", label: "📰 වෙනත් — Other" },
-];
+const CATEGORIES = CATEGORY_OPTIONS;
 
 const MAX_IMAGES = 8;
 
