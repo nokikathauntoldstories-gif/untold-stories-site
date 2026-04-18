@@ -151,13 +151,53 @@ async function main() {
     await new Promise(r => setTimeout(r, 500));
   }
 
-  // Merge: add new posts, keep existing ones untouched
+  // Merge strategy:
+  //   - New posts: insert with AI-assigned category
+  //   - Existing posts: REFRESH Facebook CDN image URLs (they expire in
+  //     24-48h via the oe= signature) and the attachments tree from FB,
+  //     but preserve admin overrides: category, categoryInfo, and any
+  //     non-Facebook attachment URLs (YouTube, Vercel Blob, etc.).
   let added = 0;
-  for (const post of newPosts) {
-    if (!existingMap.has(post.id)) {
-      existingMap.set(post.id, post);
+  let refreshed = 0;
+
+  function isFacebookHostedUrl(u) {
+    return typeof u === 'string' && /fbcdn\.net|facebook\.com/.test(u);
+  }
+
+  for (const fbPost of newPosts) {
+    const existing = existingMap.get(fbPost.id);
+    if (!existing) {
+      existingMap.set(fbPost.id, fbPost);
       added++;
+      continue;
     }
+
+    // Refresh URL-bearing fields from FB, but preserve admin-added attachments
+    const existingAtts = (existing.attachments && existing.attachments.data) || [];
+    const fbAtts = (fbPost.attachments && fbPost.attachments.data) || [];
+
+    // Non-FB attachments admin added (YouTube, Blob, etc.) — keep them
+    const preservedExtras = existingAtts.filter((a) => {
+      const mediaUrl = a && a.media && a.media.image && a.media.image.src;
+      const linkUrl = a && a.url;
+      if (mediaUrl && !isFacebookHostedUrl(mediaUrl)) return true;
+      if (linkUrl && !isFacebookHostedUrl(linkUrl)) return true;
+      return false;
+    });
+
+    const refreshedAtts = [...fbAtts, ...preservedExtras];
+
+    existingMap.set(fbPost.id, {
+      ...existing,
+      // Refresh from FB
+      message: fbPost.message || existing.message,
+      full_picture: fbPost.full_picture || existing.full_picture,
+      attachments: refreshedAtts.length > 0 ? { data: refreshedAtts } : existing.attachments,
+      // Preserve admin-set metadata
+      category: existing.category,
+      categoryInfo: existing.categoryInfo,
+    });
+    refreshed++;
   }
 
   const merged = Array.from(existingMap.values())
@@ -168,7 +208,7 @@ async function main() {
     JSON.stringify(merged, null, 2),
     'utf-8'
   );
-  console.log(`\nNew posts added: ${added}, Total: ${merged.length}`);
+  console.log(`\nNew posts added: ${added}, existing refreshed: ${refreshed}, Total: ${merged.length}`);
 }
 
 main().catch(err => {
