@@ -15,6 +15,7 @@ const sinhalaFont = Noto_Sans_Sinhala({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://nokikatha.com"),
   title: {
     default: "නොකී කතා - Untold Stories | ලෝකයේ නොකියූ කතා",
     template: "%s | නොකී කතා - Untold Stories",
@@ -36,6 +37,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "si_LK",
     siteName: "නොකී කතා - Untold Stories",
+    url: "https://nokikatha.com",
   },
   twitter: {
     card: "summary_large_image",

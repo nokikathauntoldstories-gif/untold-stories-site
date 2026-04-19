@@ -44,21 +44,44 @@ export async function generateMetadata({
 
   const title = getPostTitle(post);
   const description = getPostExcerpt(post, 160);
+  const url = `https://nokikatha.com/story/${id}`;
+
+  // Prefer full_picture; fall back to first attachment image
+  const images = getPostImages(post);
+  const ogImage = images[0] || null;
+
+  // Facebook/Twitter require absolute URLs with explicit dimensions for reliable previews
+  const ogImages = ogImage
+    ? [
+        {
+          url: ogImage,
+          secureUrl: ogImage,
+          width: 1200,
+          height: 630,
+          alt: title,
+          type: "image/jpeg",
+        },
+      ]
+    : [];
 
   return {
     title,
     description,
+    alternates: { canonical: url },
     openGraph: {
       title,
       description,
+      url,
       type: "article",
       locale: "si_LK",
-      images: post.full_picture ? [{ url: post.full_picture }] : [],
+      siteName: "නොකී කතා - Untold Stories",
+      images: ogImages,
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: ogImage ? [ogImage] : undefined,
     },
   };
 }
