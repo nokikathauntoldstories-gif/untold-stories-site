@@ -46,22 +46,18 @@ export async function generateMetadata({
   const description = getPostExcerpt(post, 160);
   const url = `https://nokikatha.com/story/${id}`;
 
-  // Prefer full_picture; fall back to first attachment image
+  // Route og:image through our own proxy (src/app/api/og-image/[postId]).
+  // The proxy URL is stable and permanent, which matters because FB's
+  // scraper caches og:image URLs for ~30 days and raw fbcdn.net links
+  // expire within 24-48h via their oe= signature. Using our origin means
+  // the cached link never goes stale.
   const images = getPostImages(post);
-  const ogImage = images[0] || null;
+  const ogImage = images.length > 0
+    ? `https://nokikatha.com/api/og-image/${id}`
+    : null;
 
-  // Facebook/Twitter require absolute URLs with explicit dimensions for reliable previews
   const ogImages = ogImage
-    ? [
-        {
-          url: ogImage,
-          secureUrl: ogImage,
-          width: 1200,
-          height: 630,
-          alt: title,
-          type: "image/jpeg",
-        },
-      ]
+    ? [{ url: ogImage, secureUrl: ogImage, alt: title }]
     : [];
 
   return {
