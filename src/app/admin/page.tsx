@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { upload } from "@vercel/blob/client";
 import { CATEGORY_OPTIONS } from "@/lib/categories";
 
 const CATEGORIES = CATEGORY_OPTIONS;
@@ -93,34 +92,71 @@ export default function AdminPage() {
     }
   };
 
-  // Small files (< 4MB): server-side upload via /api/admin/upload
-  // Large files (>= 4MB): client-side upload direct to Vercel Blob via token
-  const uploadSingle = async (file: File): Promise<string> => {
-    const THRESHOLD = 4 * 1024 * 1024; // 4MB
-
-    if (file.size < THRESHOLD) {
-      // Server-side upload (fast for small images)
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        headers: { "x-admin-password": password },
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
-      return data.url as string;
+  // Client-side compression: resize to max 1920px on the long edge,
+  // re-encode as JPEG q 0.85. A phone photo (3-8 MB) lands at 200-800 KB
+  // — well under Vercel's 4.5 MB body limit, and much faster to load on
+  // the site. We bail if the input isn't an image.
+  const compressImage = async (file: File): Promise<Blob> => {
+    if (!file.type.startsWith("image/")) {
+      throw new Error(
+        "Only images can be uploaded. For videos, paste a YouTube URL into the Video field."
+      );
     }
+    // GIFs: don't re-encode (loses animation). Trust that they're small.
+    if (file.type === "image/gif") return file;
 
-    // Client-side direct upload for large files (videos, high-res images)
-    const isVideo = file.type.startsWith("video/");
-    const folder = isVideo ? "videos" : "images";
-    const blob = await upload(`${folder}/${Date.now()}-${file.name}`, file, {
-      access: "public",
-      handleUploadUrl: "/api/admin/upload-token",
-      clientPayload: password,
+    const MAX_DIM = 1920;
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise<HTMLImageElement>((res, rej) => {
+        const i = new Image();
+        i.onload = () => res(i);
+        i.onerror = () => rej(new Error("Could not decode image"));
+        i.src = url;
+      });
+
+      let { width, height } = img;
+      if (width > MAX_DIM || height > MAX_DIM) {
+        const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas 2D context unavailable");
+      ctx.drawImage(img, 0, 0, width, height);
+
+      return await new Promise<Blob>((res, rej) => {
+        canvas.toBlob(
+          (b) => (b ? res(b) : rej(new Error("Compression failed"))),
+          "image/jpeg",
+          0.85
+        );
+      });
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  // Upload path: compress → POST to /api/admin/upload → route commits to
+  // GitHub at public/uploads/YYYY-MM/... and returns a jsDelivr CDN URL.
+  // No Vercel Blob; no bandwidth cap.
+  const uploadSingle = async (file: File): Promise<string> => {
+    const compressed = await compressImage(file);
+    const outName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+    const formData = new FormData();
+    formData.append("file", compressed, outName);
+    const res = await fetch("/api/admin/upload", {
+      method: "POST",
+      headers: { "x-admin-password": password },
+      body: formData,
     });
-    return blob.url;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Upload failed");
+    return data.url as string;
   };
 
   const handleImagesUpload = async (

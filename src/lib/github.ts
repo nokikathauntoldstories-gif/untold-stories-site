@@ -77,3 +77,50 @@ export async function commitPostsToGitHub(
     throw new Error(`GitHub commit failed: ${JSON.stringify(err)}`);
   }
 }
+
+// Commits a binary file (image bytes) to the repo. Returns a jsDelivr CDN
+// URL — jsDelivr proxies raw GitHub content with aggressive caching, so the
+// URL is serveable within seconds of the commit without burning GitHub
+// bandwidth on every page view.
+export async function commitImageToGitHub(
+  pathInRepo: string,
+  bytes: Buffer,
+  commitMessage: string
+): Promise<string> {
+  const headers = getHeaders();
+
+  // Images live under public/uploads/. Check for an existing file at this
+  // path — shouldn't happen because we timestamp names, but if it does we
+  // need the existing SHA to overwrite.
+  let existingSha: string | undefined;
+  const checkRes = await fetch(
+    `https://api.github.com/repos/${GITHUB_REPO}/contents/${pathInRepo}`,
+    { headers }
+  );
+  if (checkRes.ok) {
+    const j = await checkRes.json();
+    existingSha = j.sha;
+  }
+
+  const putRes = await fetch(
+    `https://api.github.com/repos/${GITHUB_REPO}/contents/${pathInRepo}`,
+    {
+      method: "PUT",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: commitMessage,
+        content: bytes.toString("base64"),
+        ...(existingSha ? { sha: existingSha } : {}),
+      }),
+    }
+  );
+
+  if (!putRes.ok) {
+    const err = await putRes.text();
+    throw new Error(`GitHub image commit failed: ${err.substring(0, 300)}`);
+  }
+
+  // jsDelivr: https://cdn.jsdelivr.net/gh/<user>/<repo>@<ref>/<path>
+  // Using @main so URLs stay stable across deploys.
+  return `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@main/${pathInRepo}`;
+}
